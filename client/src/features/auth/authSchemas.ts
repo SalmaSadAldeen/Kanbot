@@ -26,7 +26,10 @@ export const registerSchema = z.object({
     .string()
     .min(8, 'Password must be at least 8 characters long')
     .max(200, 'Password must not exceed 200 characters'),
+  confirmPassword: z.string().min(1, 'Please confirm your password'),
+}).refine((values) => values.password === values.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
 });
 
-// استخراج نوع البيانات من الـ Schema
 export type RegisterFormData = z.infer<typeof registerSchema>;

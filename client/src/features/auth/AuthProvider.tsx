@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect } from "react";
+import React, { createContext, useCallback, useContext, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { User } from "../../types/api.ts";
 import { getMe } from "../../api/api.ts";
@@ -35,28 +35,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     staleTime: Infinity,
   });
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem("kanbot_token");
     queryClient.clear();
     window.location.replace("/login");
-  };
+  }, [queryClient]);
 
   const login = (newToken: string, newUser: User) => {
     localStorage.setItem("kanbot_token", newToken);
-    queryClient.setQueryData(["auth-me"], { user: newUser });
+    queryClient.setQueryData(["auth-me"], newUser);
   };
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
-      logout();
+      localStorage.removeItem("kanbot_token");
+      queryClient.clear();
+      const redirect = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      window.location.replace(`/login?redirect=${encodeURIComponent(redirect)}&expired=1`);
     });
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
     if (isError) {
       logout();
     }
-  }, [isError]);
+  }, [isError, logout]);
 
   if (token && isLoading) {
     return (
@@ -78,6 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
