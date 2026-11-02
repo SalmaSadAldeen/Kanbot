@@ -14,6 +14,20 @@ export const translations = {
       profile: "Profile",
       guest: "User",
     },
+    auth: {
+      logout: "Sign out",
+      logoutTitle: "Sign out confirmation",
+      logoutMessage: "Are you sure you want to sign out from Kanbot?",
+      logoutDesc:
+        "You will need to log in again to access your projects and sprints.",
+      cancel: "Cancel",
+    },
+    topbar: {
+      toggleSidebar: "Toggle sidebar",
+      switchLangToEn: "Switch interface language to English",
+      switchLangToAr: "Switch interface language to Arabic",
+      kanbotLogoAlt: "Kanbot",
+    },
     theme: {
       toDark: "Switch to Dark Mode",
       toLight: "Switch to Light Mode",
@@ -30,6 +44,10 @@ export const translations = {
         totalTodos: "Total Tasks",
         activeSprints: "Active Sprints",
       },
+      undoDelete: {
+        message: 'Project "{name}" deleted',
+        action: "Undo",
+      },
       loading: "Loading projects...",
       errorTitle: "Failed to load projects",
       retry: "Retry",
@@ -40,8 +58,8 @@ export const translations = {
       card: {
         noActiveSprint: "No active sprint",
         noDescription: "No project description.",
-        tasksCount: "{total} tasks",
-        backlogCount: "{count} in backlog",
+        tasksCount: " tasks",
+        backlogCount: " in backlog",
         boardButton: "Board",
         editTitle: "Edit Project",
         deleteTitle: "Delete Project",
@@ -80,7 +98,7 @@ export const translations = {
     },
   },
   ar: {
-    brand: "كانبوت",
+    brand: "kanbotُ",
     workspaceOverview: "نظرة عامة على مساحة العمل",
     nav: {
       dashboard: "لوحة التحكم",
@@ -92,11 +110,25 @@ export const translations = {
       profile: "الملف الشخصي",
       guest: "مستخدم",
     },
+    auth: {
+      logout: "تسجيل الخروج",
+      logoutTitle: "تأكيد تسجيل الخروج",
+      logoutMessage: "هل أنت متأكد أنك تريد تسجيل الخروج من تطبيق Kanbot؟",
+      logoutDesc:
+        "ستحتاج إلى إدخال بيانات الدخول مرة أخرى للوصول إلى مشاريعك وسبرنتاتك.",
+      cancel: "إلغاء",
+    },
+    topbar: {
+      toggleSidebar: "تبديل الشريط الجانبي",
+      switchLangToEn: "تغيير لغة الواجهة إلى الإنجليزية",
+      switchLangToAr: "تغيير لغة الواجهة إلى العربية",
+      kanbotLogoAlt: "kanbot",
+    },
     theme: {
       toDark: "التفعيل للوضع الليلي",
       toLight: "التفعيل للوضع النهاري",
     },
-    footer: "كانبوت v1.0.0 © 2026",
+    footer: "kanbot v1.0.0 © 2026",
     projectsPage: {
       workspace: "مساحة العمل",
       title: "المشاريع",
@@ -106,6 +138,10 @@ export const translations = {
         projects: "المشاريع",
         totalTodos: "إجمالي المهام",
         activeSprints: "السبرنتات النشطة",
+      },
+      undoDelete: {
+        message: 'تم حذف المشروع "{name}"',
+        action: "تراجع",
       },
       loading: "جاري تحميل المشاريع...",
       errorTitle: "تعذّر تحميل المشاريع",
@@ -117,8 +153,8 @@ export const translations = {
       card: {
         noActiveSprint: "لا يوجد سبرنت نشط",
         noDescription: "لا يوجد وصف للمشروع.",
-        tasksCount: "{total} مهمة",
-        backlogCount: "{count} في قائمة الانتظار",
+        tasksCount: "مهمة",
+        backlogCount: " في قائمة الانتظار",
         boardButton: "لوحة العمل",
         editTitle: "تعديل المشروع",
         deleteTitle: "حذف المشروع",

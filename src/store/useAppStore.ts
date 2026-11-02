@@ -8,9 +8,11 @@ type Theme = "light" | "dark";
 interface AppState {
   theme: Theme;
   lang: Language;
+  isCollapsed: boolean;
   toggleTheme: () => void;
   setLanguage: (lang: Language) => void;
   toggleLanguage: () => void;
+  toggleSidebar: () => void;
 }
 
 const applyThemeAndLang = (theme: Theme, lang: Language) => {
@@ -30,6 +32,7 @@ export const useAppStore = create<AppState>()(
     (set, get) => ({
       theme: "light",
       lang: "en",
+      isCollapsed: false,
 
       toggleTheme: () => {
         const nextTheme = get().theme === "light" ? "dark" : "light";
@@ -46,6 +49,10 @@ export const useAppStore = create<AppState>()(
         const nextLang = get().lang === "en" ? "ar" : "en";
         applyThemeAndLang(get().theme, nextLang);
         set({ lang: nextLang });
+      },
+
+      toggleSidebar: () => {
+        set({ isCollapsed: !get().isCollapsed });
       },
     }),
     {

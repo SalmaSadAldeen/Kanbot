@@ -28,7 +28,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const {
     data: user = null,
     isLoading,
-    isError,
   } = useQuery({
     queryKey: ["auth-me"],
     queryFn: async () => {
@@ -61,12 +60,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       );
     });
   }, [queryClient]);
-
-  useEffect(() => {
-    if (isError) {
-      logout();
-    }
-  }, [isError, logout]);
 
   if (token && isLoading) {
     return (

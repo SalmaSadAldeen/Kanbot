@@ -5,10 +5,11 @@ import {
   LayoutDashboard,
   Settings,
 } from "lucide-react";
-import { useTranslation } from "../../store/useAppStore";
+import { useTranslation, useAppStore } from "../../store/useAppStore";
 
 export function Sidebar() {
   const { t } = useTranslation();
+  const isCollapsed = useAppStore((state) => state.isCollapsed);
 
   const navigation = [
     { name: t.nav.dashboard, href: "/dashboard", icon: LayoutDashboard },
@@ -18,56 +19,52 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className="flex h-full w-64 flex-col border-r border-slate-200/85 bg-white/80 backdrop-blur-xl transition-colors duration-300 dark:border-slate-800/85 dark:bg-slate-900/90">
-      {/* Header / Brand - عرض صورتكِ كما هي تماماً بدون أي تعديل أو فلتر */}
-      <div className="flex h-16 items-center gap-3.5 border-b border-slate-200/85 px-4 dark:border-slate-800/85">
-        <div className="flex h-9 w-10 items-center justify-center">
-          <img
-            src="/kanbot-icon.png"
-            alt="Kanbot Logo"
-            className="h-8 w-8 object-contain"
-          />
-        </div>
-        <div className="flex flex-col">
-          <span className="text-base font-extrabold tracking-wide text-slate-900 dark:text-slate-100">
-            Kanbot
-          </span>
-          <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 tracking-wider uppercase">
-            Workspace
-          </span>
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 space-y-1.5 px-3 py-5">
-        {navigation.map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink
-              key={item.href}
-              to={item.href}
-              className={({ isActive }) =>
-                `group relative flex items-center gap-3.5 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-200 ${
-                  isActive
-                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/25 dark:bg-indigo-600 dark:shadow-indigo-950/50"
-                    : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-slate-100"
-                }`
-              }
-            >
-              <Icon
-                size={19}
-                className="transition-transform group-hover:scale-110"
-              />
-              <span>{item.name}</span>
-            </NavLink>
-          );
-        })}
+    <aside
+      className={`relative flex h-full shrink-0 flex-col border-s border-slate-200 bg-white transition-[width] duration-300 ease-in-out dark:border-slate-800 dark:bg-slate-900 ${
+        isCollapsed ? "w-20" : "w-64"
+      }`}
+    >
+      {/* القائمة الرئيسية تبدأ فوراً من تحت التوب بار بسلاسة تامة */}
+      <nav
+        aria-label="Main navigation"
+        className={`flex-1 space-y-1 py-6 ${isCollapsed ? "px-2" : "px-3"}`}
+      >
+        {navigation.map(({ name, href, icon: Icon }) => (
+          <NavLink
+            key={href}
+            to={href}
+            title={isCollapsed ? name : undefined}
+            aria-label={isCollapsed ? name : undefined}
+            className={({ isActive }) =>
+              `group relative flex h-11 items-center rounded-xl text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                isCollapsed ? "justify-center px-0" : "gap-3 px-3"
+              } ${
+                isActive
+                  ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/70 dark:hover:text-slate-100"
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <span
+                  className={`absolute inset-y-2 start-0 w-0.5 rounded-full bg-indigo-600 transition-opacity ${
+                    isActive ? "opacity-100" : "opacity-0"
+                  }`}
+                />
+                <Icon size={19} className="shrink-0" />
+                {!isCollapsed && <span className="truncate">{name}</span>}
+              </>
+            )}
+          </NavLink>
+        ))}
       </nav>
 
-      {/* Footer */}
-      <div className="border-t border-slate-200/85 p-4 text-center text-[11px] font-medium text-slate-400 dark:border-slate-800/85">
-        {t.footer}
-      </div>
+      {!isCollapsed && (
+        <div className="border-t border-slate-200 px-4 py-3 text-center text-[11px] font-medium text-slate-400 dark:border-slate-800">
+          {t.footer}
+        </div>
+      )}
     </aside>
   );
 }
