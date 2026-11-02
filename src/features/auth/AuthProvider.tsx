@@ -1,7 +1,12 @@
-import React, { createContext, useCallback, useContext, useEffect } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+} from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { User } from "../../types/api.ts";
-import { getMe } from "../../api/api.ts";
+import { getMe } from "../../api/auth.ts";
 import { setUnauthorizedHandler } from "../../api/client";
 
 interface AuthContextType {
@@ -51,7 +56,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       localStorage.removeItem("kanbot_token");
       queryClient.clear();
       const redirect = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-      window.location.replace(`/login?redirect=${encodeURIComponent(redirect)}&expired=1`);
+      window.location.replace(
+        `/login?redirect=${encodeURIComponent(redirect)}&expired=1`,
+      );
     });
   }, [queryClient]);
 

@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { ArrowRight, LockKeyhole, Mail } from "lucide-react";
 
 import { ApiError } from "../../../api/client";
-import { login as loginRequest } from "../../../api/api";
+import { login as loginRequest } from "../../../api/auth";
 import type { LoginRequest } from "../../../types/api";
 import { useAuth } from "../AuthProvider";
 import { loginSchema } from "../AuthSchemas";

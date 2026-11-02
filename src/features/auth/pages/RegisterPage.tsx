@@ -6,7 +6,7 @@ import type { FieldPath } from "react-hook-form";
 import { ArrowRight, LockKeyhole, Mail, UserRound } from "lucide-react";
 
 import { ApiError } from "../../../api/client";
-import { register as registerRequest } from "../../../api/api";
+import { register as registerRequest } from "../../../api/auth";
 import type { RegisterRequest } from "../../../types/api";
 import { useAuth } from "../AuthProvider";
 import { registerSchema } from "../AuthSchemas";

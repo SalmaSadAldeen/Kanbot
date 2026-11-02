@@ -5,7 +5,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Primary Brand Colors (Indigo & Blue Slate)
+        // Primary Brand (Exact Base: #4f46e5 with full harmonious scale)
         indigo: {
           50: "#EEF2FF",
           100: "#E0E7FF",
@@ -13,27 +13,27 @@ export default {
           300: "#A5B4FC",
           400: "#818CF8",
           500: "#6366F1",
-          600: "#5850EC", // Primary Main Brand
-          700: "#4338CA", // Primary Hover
+          600: "#4F46E5", // الأساسي المعتمد لديكِ
+          700: "#4338CA", // Hover
           800: "#3730A3",
           900: "#312E81",
           950: "#1E1B4B",
         },
-        // Accent Colors (Emerald - AI & Active Indicators)
+        // Accent & Success (Exact Base: #22c55e with full harmonious scale)
         emerald: {
-          50: "#ECFDF5",
-          100: "#D1FAE5",
-          200: "#A7F3D0",
-          300: "#6EE7B7",
-          400: "#34D399",
-          500: "#10B981", // Accent Main
-          600: "#059669", // Accent Hover
-          700: "#047857",
-          800: "#065F46",
-          900: "#064E3B",
-          950: "#022C22",
+          50: "#F0FDF4",
+          100: "#DCFCE7",
+          200: "#BBF7D0",
+          300: "#86EFAC",
+          400: "#4ADE80",
+          500: "#22C55E", // الأساسي المعتمد لديكِ
+          600: "#16A34A", // Hover
+          700: "#15803D",
+          800: "#166534",
+          900: "#14532D",
+          950: "#052E16",
         },
-        // Priorities & Statuses (Badges & Highlights)
+        // Priorities & Statuses
         amber: {
           50: "#FFFBEB",
           500: "#F59E0B",
