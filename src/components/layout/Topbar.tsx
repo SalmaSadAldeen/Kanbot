@@ -11,8 +11,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../features/auth/AuthProvider";
 import { useAppStore, useTranslation } from "../../store/useAppStore";
-import { ProjectSwitcher } from "../../features/projects/components/ProjectSwitcher";
-import { Dialog } from "../ui/Dialog"; // تأكدي من مسار الـ Dialog بحسب مشروعك
+import { Dialog } from "../ui/Dialog";
 
 export function Topbar() {
   const { user, logout } = useAuth();
@@ -25,7 +24,6 @@ export function Topbar() {
   return (
     <>
       <header className="flex h-16 w-full items-center justify-between border-b border-slate-200/80 bg-white/80 px-6 backdrop-blur-xl transition-colors dark:border-slate-800/80 dark:bg-slate-900/95 shrink-0 z-20">
-        {/* القسم الأيسر/الأيمن: اللوغو وزر الطي بمكان ثابت تماماً فوق السايد بار */}
         <div className="flex min-w-0 items-center gap-3 sm:gap-4">
           <button
             type="button"
@@ -58,13 +56,10 @@ export function Topbar() {
               {t.brand}
             </span>
           </div>
-          <div className="h-6 w-px shrink-0 bg-slate-200 dark:bg-slate-700" />
-          <ProjectSwitcher />
         </div>
 
         {/* قسم الأدوات (اللغة، الثيم، والمستخدم) */}
         <div className="flex items-center gap-3">
-          {/* Language Switch Button */}
           <button
             type="button"
             onClick={toggleLanguage}
@@ -78,7 +73,6 @@ export function Topbar() {
             <span>{isRtl ? "English" : "العربية"}</span>
           </button>
 
-          {/* Theme Toggle Button */}
           <button
             type="button"
             onClick={toggleTheme}
@@ -101,7 +95,6 @@ export function Topbar() {
 
           <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
 
-          {/* User Profile Badge */}
           <div className="flex items-center gap-3 rounded-xl border border-transparent p-1 transition-colors hover:border-slate-200 dark:hover:border-slate-800">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-xs font-bold text-white shadow-md shadow-indigo-600/20">
               {user?.name ? (
@@ -115,7 +108,6 @@ export function Topbar() {
             </span>
           </div>
 
-          {/* Logout Button (Opens Confirmation Modal) */}
           <button
             type="button"
             onClick={() => setIsLogoutModalOpen(true)}
@@ -128,7 +120,6 @@ export function Topbar() {
         </div>
       </header>
 
-      {/* Logout Confirmation Dialog */}
       <Dialog
         isOpen={isLogoutModalOpen}
         onClose={() => setIsLogoutModalOpen(false)}

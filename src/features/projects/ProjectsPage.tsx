@@ -1,6 +1,6 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Activity, FolderKanban, ListTodo, Plus } from "lucide-react";
+import { FolderKanban, Plus, Search } from "lucide-react";
 import { useTranslation } from "../../store/useAppStore";
 import { Button } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/EmptyState";
@@ -12,62 +12,195 @@ import { ProjectFormDialog } from "./ProjectFormDialog";
 import { ProjectCard } from "./components/ProjectCard";
 
 export function ProjectsPage() {
-  const { t } = useTranslation();
+  const { t, isRtl } = useTranslation();
   const navigate = useNavigate();
-  const { projects, isLoading, isError, error, refetch, deleteProject } = useProjects();
+  const { projects, isLoading, isError, error, refetch, deleteProject } =
+    useProjects();
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<ProjectWithStats | null>(null);
+  const [selectedProject, setSelectedProject] =
+    useState<ProjectWithStats | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [projectToDelete, setProjectToDelete] = useState<ProjectWithStats | null>(null);
+  const [projectToDelete, setProjectToDelete] =
+    useState<ProjectWithStats | null>(null);
   const [isDeletingActive, setIsDeletingActive] = useState(false);
 
-  const openCreate = () => { setSelectedProject(null); setIsFormOpen(true); };
-  const openEdit = (project: ProjectWithStats) => { setSelectedProject(project); setIsFormOpen(true); };
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredProjects = projects.filter((p) =>
+    `${p.name} ${p.key} ${p.description ?? ""}`
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase()),
+  );
+
+  const openCreate = () => {
+    setSelectedProject(null);
+    setIsFormOpen(true);
+  };
+  const openEdit = (project: ProjectWithStats) => {
+    setSelectedProject(project);
+    setIsFormOpen(true);
+  };
+
   const confirmDelete = async () => {
     if (!projectToDelete) return;
     setIsDeletingActive(true);
     setDeletingId(projectToDelete.id);
-    try { await deleteProject(projectToDelete.id); setProjectToDelete(null); }
-    finally { setIsDeletingActive(false); setDeletingId(null); }
+    try {
+      await deleteProject(projectToDelete.id);
+      setProjectToDelete(null);
+    } finally {
+      setIsDeletingActive(false);
+      setDeletingId(null);
+    }
   };
-  const totalTodos = projects.reduce((sum, project) => sum + project.stats.totalTodos, 0);
-  const activeSprints = projects.filter((project) => project.stats.activeSprint !== null).length;
 
   return (
-    <main className="mx-auto w-full max-w-7xl space-y-7">
-      <header className="flex flex-col gap-5 border-b border-slate-200 pb-6 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
-        <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-400">{t.projectsPage.workspace}</p>
-          <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">{t.projectsPage.title}</h1>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">{t.projectsPage.subtitle}</p>
+    <main className="mx-auto w-full max-w-7xl space-y-6 p-6">
+      {/* Top Header */}
+      {/* Top Header */}
+      <header className="flex items-center justify-between border-b border-slate-200 pb-5 dark:border-slate-800">
+        <div className="flex items-baseline gap-3">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+            {t.projectsPage.title}
+          </h1>
+          <span className="text-sm font-medium text-slate-500">
+            {projects.length} {t.projectsPage.stats.projects.toLowerCase()}
+          </span>
         </div>
-        <Button onClick={openCreate} leftIcon={<Plus size={17} />} className="self-start rounded-xl shadow-sm shadow-indigo-600/20 sm:self-auto">{t.projectsPage.newProject}</Button>
+        <Button
+          onClick={openCreate}
+          leftIcon={<Plus size={16} />}
+          className="rounded-xl shadow-sm shadow-indigo-600/25"
+        >
+          {t.projectsPage.newProject}
+        </Button>
       </header>
 
-      {!isLoading && !isError && projects.length > 0 && <section aria-label={t.projectsPage.title} className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label={t.projectsPage.stats.projects} value={projects.length} icon={<FolderKanban size={19} />} />
-        <StatCard label={t.projectsPage.stats.totalTodos} value={totalTodos} icon={<ListTodo size={19} />} />
-        <StatCard label={t.projectsPage.stats.activeSprints} value={activeSprints} icon={<Activity size={19} />} />
-      </section>}
+      {/* Global Projects Search Input */}
+      <div className="max-w-md">
+        <div className="relative">
+          <Search
+            size={15}
+            className="absolute start-3 top-1/2 -translate-y-1/2 text-slate-400"
+          />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={isRtl ? "ابحث عن مشروع..." : "Search projects..."}
+            className="h-10 w-full rounded-lg border border-slate-300 bg-white ps-9 pe-3 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+          />
+        </div>
+      </div>
 
-      {isLoading ? <div className="flex min-h-72 flex-col items-center justify-center gap-2 text-sm text-slate-500" role="status"><Spinner size="lg" /><span>{t.projectsPage.loading}</span></div>
-        : isError ? <div className="rounded-2xl border border-rose-200 bg-rose-50/70 p-7 text-center dark:border-rose-900/60 dark:bg-rose-950/20" role="alert"><p className="font-semibold text-slate-900 dark:text-slate-100">{t.projectsPage.errorTitle}</p><p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{error instanceof Error ? error.message : t.projectsPage.errorTitle}</p><Button variant="outline" className="mt-4" onClick={() => void refetch()}>{t.projectsPage.retry}</Button></div>
-        : projects.length === 0 ? <EmptyState title={t.projectsPage.emptyTitle} description={t.projectsPage.emptyDesc} icon={<FolderKanban size={30} className="text-indigo-600 dark:text-indigo-400" />} action={<Button onClick={openCreate} leftIcon={<Plus size={17} />}>{t.projectsPage.emptyAction}</Button>} />
-        : <section aria-label={t.projectsPage.title} className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">{projects.map((project) => <ProjectCard key={project.id} project={project} isDeleting={deletingId === project.id} onEdit={openEdit} onDelete={setProjectToDelete} />)}</section>}
+      {/* Content Section */}
+      {isLoading ? (
+        <div className="flex min-h-64 items-center justify-center gap-2 text-slate-500">
+          <Spinner size="lg" />
+          <span>{t.projectsPage.loading}</span>
+        </div>
+      ) : isError ? (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-center dark:border-rose-900/60 dark:bg-rose-950/20">
+          <p className="font-semibold text-slate-900 dark:text-slate-100">
+            {error instanceof Error ? error.message : t.projectsPage.errorTitle}
+          </p>
+          <Button
+            variant="outline"
+            className="mt-3"
+            onClick={() => void refetch()}
+          >
+            {t.projectsPage.retry}
+          </Button>
+        </div>
+      ) : projects.length === 0 ? (
+        /* Empty State Component */
+        <EmptyState
+          title={t.projectsPage.emptyTitle}
+          description={t.projectsPage.emptyDesc}
+          icon={
+            <FolderKanban
+              size={36}
+              className="text-slate-400 dark:text-slate-500"
+            />
+          }
+          action={
+            <Button
+              onClick={openCreate}
+              leftIcon={<Plus size={16} />}
+              className="mt-2 rounded-lg bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+            >
+              {t.projectsPage.emptyAction}
+            </Button>
+          }
+        />
+      ) : (
+        /* Projects Grid + Dashed Add Button */
+        <section className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {filteredProjects.map((project) => (
+            <ProjectCard
+              key={project.id}
+              project={project}
+              isDeleting={deletingId === project.id}
+              onEdit={openEdit}
+              onDelete={setProjectToDelete}
+            />
+          ))}
 
-      <ProjectFormDialog key={`${isFormOpen}-${selectedProject?.id ?? "new"}`} isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} onCreated={(projectId) => navigate(`/projects/${projectId}/board`)} projectToEdit={selectedProject} />
+          {/* New Project Dashed Card */}
+          <button
+            type="button"
+            onClick={openCreate}
+            className="flex min-h-48 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-6 text-slate-600 transition hover:border-slate-400 hover:bg-slate-100/50 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-400 dark:hover:border-slate-700"
+          >
+            <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+              + {t.projectsPage.newProject}
+            </span>
+          </button>
+        </section>
+      )}
 
-      <Dialog isOpen={!!projectToDelete} onClose={() => !isDeletingActive && setProjectToDelete(null)} title={t.projectsPage.deleteConfirm.title}>
-        <div className="space-y-5">
-          <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-900/60 dark:bg-rose-950/20"><p className="text-sm leading-6 text-slate-700 dark:text-slate-300">{t.projectsPage.deleteConfirm.message.replace("{name}", projectToDelete?.name ?? "")}</p></div>
-          <div className="flex justify-end gap-2 border-t border-slate-200 pt-4 dark:border-slate-800"><Button variant="secondary" onClick={() => setProjectToDelete(null)} disabled={isDeletingActive}>{t.projectsPage.deleteConfirm.cancel}</Button><Button variant="danger" onClick={() => void confirmDelete()} disabled={isDeletingActive}>{isDeletingActive ? <Spinner size="sm" className="p-0" /> : t.projectsPage.deleteConfirm.confirm}</Button></div>
+      <ProjectFormDialog
+        key={`${isFormOpen}-${selectedProject?.id ?? "new"}`}
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onCreated={(id) => navigate(`/projects/${id}/board`)}
+        projectToEdit={selectedProject}
+      />
+
+      <Dialog
+        isOpen={!!projectToDelete}
+        onClose={() => !isDeletingActive && setProjectToDelete(null)}
+        title={t.projectsPage.deleteConfirm.title}
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            {t.projectsPage.deleteConfirm.message.replace(
+              "{name}",
+              projectToDelete?.name ?? "",
+            )}
+          </p>
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <Button
+              variant="secondary"
+              onClick={() => setProjectToDelete(null)}
+              disabled={isDeletingActive}
+            >
+              {t.projectsPage.deleteConfirm.cancel}
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => void confirmDelete()}
+              disabled={isDeletingActive}
+            >
+              {isDeletingActive ? (
+                <Spinner size="sm" />
+              ) : (
+                t.projectsPage.deleteConfirm.confirm
+              )}
+            </Button>
+          </div>
         </div>
       </Dialog>
     </main>
   );
-}
-
-interface StatCardProps { label: string; value: number; icon: ReactNode; }
-function StatCard({ label, value, icon }: StatCardProps) {
-  return <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400">{icon}</span><div className="min-w-0"><p className="truncate text-xs font-semibold text-slate-500 dark:text-slate-400">{label}</p><p className="mt-0.5 text-2xl font-extrabold leading-7 tabular-nums text-slate-900 dark:text-slate-100">{value}</p></div></div>;
 }

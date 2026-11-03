@@ -9,10 +9,14 @@
 html,
 body,
 #root {
-  min-height: 100%;
-}
-body {
+  height: 100%;
+  width: 100%;
   margin: 0;
+  padding: 0;
+  overflow: hidden; /* يمنع السكرول العام للصفحة بالكامل ويخلي التمرير داخل الـ main والـ sidebar فقط */
+}
+
+body {
   font-family: Inter, system-ui, sans-serif;
   background-color: var(--color-slate-50);
   color: var(--color-slate-900);

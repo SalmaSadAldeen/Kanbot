@@ -5,7 +5,7 @@ import { LoginPage } from "./features/auth/pages/LoginPage";
 import { RegisterPage } from "./features/auth/pages/RegisterPage";
 import { AppShell } from "./components/layout/AppShell"; // استيراد الهيكل العام
 import { ProjectsPage } from "./features/projects/ProjectsPage";
-
+import { BacklogPage } from "./features/backlog/BacklogPage";
 export const router = createBrowserRouter([
   {
     element: <GuestRoute />,
@@ -18,27 +18,32 @@ export const router = createBrowserRouter([
     element: <ProtectedRoute />,
     children: [
       {
-        element: <AppShell />, // AppShell يلتف حول كل الصفحات المحمية
+        element: <AppShell />,
         children: [
           {
             path: "/",
-            element: <Navigate to="/projects" replace />, // إعادة توجيه من الرئيسية إلى المشاريع
+            element: <Navigate to="/projects" replace />,
           },
           {
             path: "/projects",
             element: <ProjectsPage />,
           },
+          // المسارات الفرعية الخاصة بالمشروع المعين
           {
             path: "/projects/:projectId",
             element: <ProjectsPage />,
           },
           {
-            path: "/dashboard",
-            element: <ProjectsPage />,
+            path: "/projects/:projectId/backlog",
+            element: <BacklogPage />,
           },
           {
-            path: "/tasks",
-            element: <div className="p-4">My Tasks</div>,
+            path: "/projects/:projectId/active-sprint",
+            element: <div className="p-4">Active Sprint Page</div>,
+          },
+          {
+            path: "/projects/:projectId/sprints",
+            element: <div className="p-4">Sprints Page</div>,
           },
           {
             path: "/settings",
