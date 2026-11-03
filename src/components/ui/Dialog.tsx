@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 
 interface DialogProps {
@@ -9,6 +9,13 @@ interface DialogProps {
   maxWidth?: "sm" | "md" | "lg" | "xl";
 }
 
+const maxWidthClasses: Record<NonNullable<DialogProps["maxWidth"]>, string> = {
+  sm: "max-w-sm",
+  md: "max-w-md",
+  lg: "max-w-lg",
+  xl: "max-w-xl",
+};
+
 export const Dialog: React.FC<DialogProps> = ({
   isOpen,
   onClose,
@@ -16,49 +23,74 @@ export const Dialog: React.FC<DialogProps> = ({
   children,
   maxWidth = "md",
 }) => {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Close on Escape
   useEffect(() => {
+    if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) onClose();
+      if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handleKeyDown);
+    // Move focus to close button when dialog opens
+    closeButtonRef.current?.focus();
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
-  const maxWidthClasses = {
-    sm: "max-w-sm",
-    md: "max-w-md",
-    lg: "max-w-lg",
-    xl: "max-w-xl",
-  };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dialog-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    >
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
+        aria-hidden="true"
+        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
         onClick={onClose}
+        style={{ animation: "dialogFadeIn 0.15s ease" }}
       />
 
-      {/* Dialog Box */}
+      {/* Panel */}
       <div
-        className={`relative w-full ${maxWidthClasses[maxWidth]} rounded-2xl border border-slate-200/80 bg-white p-6 shadow-modal transition-all animate-in zoom-in-95 duration-200 dark:border-slate-800 dark:bg-slate-900 z-10`}
+        className={`relative z-10 w-full ${maxWidthClasses[maxWidth]} rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900`}
+        style={{ animation: "dialogSlideIn 0.18s cubic-bezier(0.16,1,0.3,1)" }}
       >
+        {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
-          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+          <h3
+            id="dialog-title"
+            className="text-base font-bold text-slate-900 dark:text-slate-100"
+          >
             {title}
           </h3>
           <button
+            ref={closeButtonRef}
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            aria-label="Close dialog"
           >
-            <X size={18} />
+            <X size={17} />
           </button>
         </div>
 
         <div className="mt-4">{children}</div>
       </div>
+
+      {/* Keyframe animations defined inline so they don't need a plugin */}
+      <style>{`
+        @keyframes dialogFadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes dialogSlideIn {
+          from { opacity: 0; transform: scale(0.96) translateY(6px); }
+          to   { opacity: 1; transform: scale(1)    translateY(0);   }
+        }
+      `}</style>
     </div>
   );
 };

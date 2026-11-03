@@ -63,11 +63,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   if (token && isLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-zinc-950 text-zinc-100">
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="flex flex-col items-center gap-3">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
-          <span className="text-xs font-medium tracking-wider text-zinc-500 uppercase">
-            Initializing session...
+          <span className="text-xs font-medium tracking-widest uppercase text-slate-500 dark:text-slate-400">
+            Loading…
           </span>
         </div>
       </div>

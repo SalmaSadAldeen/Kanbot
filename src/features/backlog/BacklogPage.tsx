@@ -1,27 +1,36 @@
 import { useState, type KeyboardEvent } from "react";
-import { useParams } from "react-router";
-import { ChevronDown, ChevronRight, Plus } from "lucide-react";
+import { useParams, useNavigate } from "react-router";
 import { Spinner } from "../../components/ui/Spinner";
 import { useTranslation } from "../../store/useAppStore";
-import type { Todo } from "../../types/api";
+import type {
+  Todo,
+  Sprint,
+  CreateSprintRequest,
+  StartSprintRequest,
+} from "../../types/api";
 import { useBacklogMaster } from "../../hooks/useBacklogMaster";
 import { useTodos } from "../../hooks/useTodos";
+import { useSprints } from "../../hooks/useSprints";
 import { BacklogHeader } from "./components/BacklogHeader";
+import { SectionHeader } from "./components/SectionHeader";
+import { BacklogSectionList } from "../todos/BacklogSectionList";
+import { QuickCreateBar } from "./components/QuickCreateBar";
 import { TodoDetailsDialog } from "../todos/TodoDetailsDialog";
-import { TodoRow } from "../todos/TodoRow";
+import { SprintsList } from "../sprint/SprintsList";
+import { SprintFormDialog } from "../sprint/components/SprintFormDialog";
 
 export function BacklogPage() {
   const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const copy = t.projectsPage.backlogPage;
 
   const {
     backlogTodos,
     rawBacklogTodos,
-    isLoading,
-    error: pageError,
+    isLoading: isBacklogLoading,
+    error: backlogError,
     refetchBacklog,
-    refetchSprints,
     createTodo,
     search,
     setSearch,
@@ -35,14 +44,48 @@ export function BacklogPage() {
 
   const { deleteTodo } = useTodos(projectId);
 
+  const {
+    sprints,
+    allSprints,
+    isLoading: isSprintsLoading,
+    error: sprintsError,
+    refetch: refetchSprints,
+    createSprint,
+    updateSprint,
+    deleteSprint,
+    startSprint,
+  } = useSprints(projectId);
+
   const [quickTitle, setQuickTitle] = useState<string>("");
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(false);
+
+  const [isSprintDialogOpen, setIsSprintDialogOpen] = useState(false);
+  const [editingSprint, setEditingSprint] = useState<Sprint | null>(null);
 
   const totalPoints = rawBacklogTodos.reduce(
     (sum: number, todo: Todo) => sum + (todo.storyPoints ?? 0),
     0,
   );
+
+  const backlogPoints = backlogTodos.reduce(
+    (sum: number, todo: Todo) => sum + (todo.storyPoints ?? 0),
+    0,
+  );
+
+  const handleSprintSubmit = async (data: CreateSprintRequest) => {
+    try {
+      if (editingSprint) {
+        await updateSprint.mutateAsync({ sprintId: editingSprint.id, data });
+      } else {
+        await createSprint.mutateAsync(data);
+      }
+      setIsSprintDialogOpen(false);
+      setEditingSprint(null);
+    } catch (err) {
+      console.error("Failed to save sprint:", err);
+    }
+  };
 
   const submitQuickCreate = async () => {
     const title = quickTitle.trim();
@@ -51,7 +94,7 @@ export function BacklogPage() {
       await createTodo.mutateAsync({ title });
       setQuickTitle("");
     } catch {
-      // Handled via createTodo.isError
+      // Handled in mutation state
     }
   };
 
@@ -65,9 +108,11 @@ export function BacklogPage() {
     }
   };
 
+  const isLoading = isBacklogLoading || isSprintsLoading;
+  const pageError = backlogError || sprintsError;
+
   return (
-    <main className="mx-auto w-full max-w-7xl space-y-6 pb-12 outline-none focus:outline-none">
-      {/* الهيدر العلوي */}
+    <div className="mx-auto w-full max-w-7xl space-y-6 pb-12">
       <BacklogHeader
         copy={copy}
         search={search}
@@ -78,9 +123,12 @@ export function BacklogPage() {
         setType={setType}
         totalTodos={rawBacklogTodos.length}
         totalPoints={totalPoints}
+        onCreateSprint={() => {
+          setEditingSprint(null);
+          setIsSprintDialogOpen(true);
+        }}
       />
 
-      {/* حالات التحميل والأخطاء */}
       {isLoading ? (
         <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 text-sm text-slate-500">
           <Spinner size="lg" className="text-indigo-600" />
@@ -91,7 +139,7 @@ export function BacklogPage() {
       ) : pageError ? (
         <div
           role="alert"
-          className="rounded-2xl border border-rose-200 bg-rose-50/80 p-6 dark:border-rose-900/50 dark:bg-rose-950/20 shadow-sm"
+          className="rounded-2xl border border-rose-200 bg-rose-50/80 p-6 shadow-sm dark:border-rose-900/50 dark:bg-rose-950/20"
         >
           <div className="flex items-start gap-3">
             <div className="flex-1">
@@ -99,7 +147,7 @@ export function BacklogPage() {
                 {copy.loadingError}
               </p>
               <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-                {pageError.message}
+                {(pageError as Error).message}
               </p>
             </div>
             <button
@@ -107,7 +155,7 @@ export function BacklogPage() {
                 void refetchBacklog();
                 void refetchSprints();
               }}
-              className="rounded-lg border border-rose-300 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-100 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-900/40 cursor-pointer"
+              className="cursor-pointer rounded-lg border border-rose-300 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-100 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-900/40"
             >
               {copy.retry}
             </button>
@@ -115,15 +163,44 @@ export function BacklogPage() {
         </div>
       ) : (
         <div className="space-y-6">
+          <SprintsList
+            sprints={sprints}
+            allSprints={allSprints}
+            allTodos={rawBacklogTodos}
+            collapsedMap={collapsed}
+            onToggleSection={toggleSection}
+            onEditSprint={(s) => {
+              setEditingSprint(s);
+              setIsSprintDialogOpen(true);
+            }}
+            onDeleteSprint={(sprintId) =>
+              void deleteSprint.mutateAsync(sprintId)
+            }
+            onStartSprint={async (
+              sprintId: string,
+              data: StartSprintRequest,
+            ) => {
+              await startSprint.mutateAsync({ sprintId, data });
+              if (projectId) {
+                navigate(`/projects/${projectId}/board`);
+              }
+            }}
+            onSelectTodo={(todo) => {
+              setSelectedTodo(todo);
+              setIsDetailsOpen(true);
+            }}
+            onEditTodo={(todo) => {
+              setSelectedTodo(todo);
+              setIsDetailsOpen(true);
+            }}
+            onDeleteTodo={(todo) => void deleteTodo(todo.id)}
+          />
+
           <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            {/* عنوان قسم الباكلوج مع زر الطي */}
             <SectionHeader
               title={copy.backlog}
               count={backlogTodos.length}
-              points={backlogTodos.reduce(
-                (sum: number, todo: Todo) => sum + (todo.storyPoints ?? 0),
-                0,
-              )}
+              points={backlogPoints}
               countLabel={copy.todos}
               pointsLabel={copy.pts}
               isCollapsed={collapsed.has("backlog")}
@@ -131,70 +208,63 @@ export function BacklogPage() {
             />
 
             {!collapsed.has("backlog") && (
-              <div className="flex flex-col bg-white dark:bg-slate-900">
-                {backlogTodos.length > 0 ? (
-                  <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                    {backlogTodos.map((todo: Todo) => (
-                      <TodoRow
-                        key={todo.id}
-                        todo={todo}
-                        moreLabel={copy.moreActions}
-                        onSelect={() => {
-                          setSelectedTodo(todo);
-                          setIsDetailsOpen(true);
-                        }}
-                        onEdit={() => {
-                          setSelectedTodo(todo);
-                          setIsDetailsOpen(true);
-                        }}
-                        onDelete={(tItem) => {
-                          void deleteTodo(tItem.id);
-                        }}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="px-6 py-12 text-center text-sm font-medium text-slate-400 dark:text-slate-500">
-                    {rawBacklogTodos.length ? copy.noResults : copy.emptyState}
-                  </div>
-                )}
+              <>
+                <BacklogSectionList
+                  todos={backlogTodos}
+                  rawTotalCount={rawBacklogTodos.length}
+                  moreLabel={copy.moreActions}
+                  noResultsText={copy.noResults}
+                  emptyStateText={copy.emptyState}
+                  onSelectTodo={(todo) => {
+                    setSelectedTodo(todo);
+                    setIsDetailsOpen(true);
+                  }}
+                  onEditTodo={(todo) => {
+                    setSelectedTodo(todo);
+                    setIsDetailsOpen(true);
+                  }}
+                  onDeleteTodo={(todo) => {
+                    void deleteTodo(todo.id);
+                  }}
+                />
 
-                {/* شريط الإضافة السريعة معزول تماماً لمنع ظهور أي بوردير أسود */}
-                <div className="border-t border-slate-100 bg-slate-50/60 p-3.5 dark:border-slate-800/80 dark:bg-slate-950/50">
-                  <div className="flex items-center gap-3 px-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400 shrink-0">
-                      <Plus size={16} />
-                    </div>
-                    <input
-                      value={quickTitle}
-                      onChange={(event) => setQuickTitle(event.target.value)}
-                      onKeyDown={onQuickKeyDown}
-                      maxLength={200}
-                      placeholder={copy.quickCreatePlaceholder}
-                      aria-label={copy.quickCreatePlaceholder}
-                      disabled={createTodo.isPending}
-                      className="h-10 min-w-0 flex-1 bg-transparent text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400 disabled:opacity-60 dark:text-slate-100"
-                    />
-                    {createTodo.isPending && (
-                      <Spinner size="sm" inline className="text-indigo-600" />
-                    )}
-                  </div>
-                  <p className="ms-10 mt-1 text-[11px] font-medium text-slate-400">
-                    {createTodo.isError
-                      ? (createTodo.error as Error).message
-                      : copy.quickCreateHint}
-                  </p>
-                </div>
-              </div>
+                <QuickCreateBar
+                  quickTitle={quickTitle}
+                  setQuickTitle={setQuickTitle}
+                  onQuickKeyDown={onQuickKeyDown}
+                  isPending={createTodo.isPending}
+                  isError={createTodo.isError}
+                  errorMessage={(createTodo.error as Error)?.message}
+                  placeholder={copy.quickCreatePlaceholder}
+                  hintText={copy.quickCreateHint}
+                />
+              </>
             )}
           </section>
         </div>
       )}
 
-      {/* نافذة تفاصيل المهمة الجانبية */}
+      {/* مفاتيح دقيقة وفريدة لمنع تكرار مفتاح closed */}
+      <SprintFormDialog
+        key={
+          isSprintDialogOpen
+            ? (editingSprint?.id ?? "active-sprint-form")
+            : "closed-sprint-form"
+        }
+        isOpen={isSprintDialogOpen}
+        sprintToEdit={editingSprint}
+        isPending={createSprint.isPending || updateSprint.isPending}
+        error={createSprint.error || updateSprint.error}
+        onClose={() => {
+          setIsSprintDialogOpen(false);
+          setEditingSprint(null);
+        }}
+        onSubmit={handleSprintSubmit}
+      />
+
       {projectId && (
         <TodoDetailsDialog
-          key={selectedTodo?.id ?? "closed"}
+          key={selectedTodo?.id ?? "closed-todo-details"}
           todo={selectedTodo}
           projectId={projectId}
           isOpen={isDetailsOpen}
@@ -204,47 +274,6 @@ export function BacklogPage() {
           }}
         />
       )}
-    </main>
-  );
-}
-
-interface SectionHeaderProps {
-  title: string;
-  count: number;
-  points: number;
-  countLabel: string;
-  pointsLabel: string;
-  isCollapsed: boolean;
-  onToggle: () => void;
-}
-
-function SectionHeader({
-  title,
-  count,
-  points,
-  countLabel,
-  pointsLabel,
-  isCollapsed,
-  onToggle,
-}: SectionHeaderProps) {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50/70 px-4 py-3 border-b border-slate-200/80 dark:bg-slate-900/80 dark:border-slate-800">
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={!isCollapsed}
-        className="flex min-w-0 flex-1 items-center gap-2.5 text-start group cursor-pointer outline-none focus:outline-none"
-      >
-        <span className="text-slate-400 transition-transform group-hover:text-slate-600 dark:group-hover:text-slate-200">
-          {isCollapsed ? <ChevronRight size={17} /> : <ChevronDown size={17} />}
-        </span>
-        <span className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">
-          {title}
-        </span>
-        <span className="shrink-0 rounded-full bg-slate-200/70 px-2.5 py-0.5 text-[11px] font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-          {count} {countLabel} · {points} {pointsLabel}
-        </span>
-      </button>
     </div>
   );
 }

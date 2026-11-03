@@ -31,15 +31,15 @@ export const router = createBrowserRouter([
           // المسارات الفرعية الخاصة بالمشروع المعين
           {
             path: "/projects/:projectId",
-            element: <ProjectsPage />,
+            element: <Navigate to="backlog" replace />,
           },
           {
             path: "/projects/:projectId/backlog",
             element: <BacklogPage />,
           },
           {
-            path: "/projects/:projectId/active-sprint",
-            element: <div className="p-4">Active Sprint Page</div>,
+            path: "/projects/:projectId/board",
+            element: <div className="p-4">Board Page (Day 5)</div>,
           },
           {
             path: "/projects/:projectId/sprints",

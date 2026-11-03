@@ -55,7 +55,7 @@ export function ProjectsPage() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-7xl space-y-6 p-6">
+    <div className="mx-auto w-full max-w-7xl space-y-6">
       {/* Top Header */}
       {/* Top Header */}
       <header className="flex items-center justify-between border-b border-slate-200 pb-5 dark:border-slate-800">
@@ -88,7 +88,7 @@ export function ProjectsPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={isRtl ? "ابحث عن مشروع..." : "Search projects..."}
-            className="h-10 w-full rounded-lg border border-slate-300 bg-white ps-9 pe-3 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            className="h-10 w-full rounded-lg border border-slate-200 bg-white ps-9 pe-3 text-sm text-slate-800 outline-none placeholder:text-slate-400 transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
           />
         </div>
       </div>
@@ -163,7 +163,7 @@ export function ProjectsPage() {
         key={`${isFormOpen}-${selectedProject?.id ?? "new"}`}
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
-        onCreated={(id) => navigate(`/projects/${id}/board`)}
+        onCreated={(id) => navigate(`/projects/${id}/backlog`)}
         projectToEdit={selectedProject}
       />
 
@@ -201,6 +201,6 @@ export function ProjectsPage() {
           </div>
         </div>
       </Dialog>
-    </main>
+    </div>
   );
 }

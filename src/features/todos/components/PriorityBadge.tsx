@@ -9,27 +9,29 @@ interface PriorityBadgeProps {
 export function PriorityBadge({ priority }: PriorityBadgeProps) {
   const { t } = useTranslation();
 
+  // ألوان وتصاميم مطابقة لـ Jira تماماً (أيقونات واضحة مع خلفيات مميزة)
   const config: Record<
     TodoPriority,
     { icon: typeof ChevronsUp; color: string }
   > = {
     urgent: {
       icon: ChevronsUp,
-      color: "text-rose-600 bg-rose-50 dark:bg-rose-950/50 dark:text-rose-400",
+      color: "text-red-700 bg-red-100/80 dark:bg-red-950/60 dark:text-red-400",
     },
     high: {
       icon: ChevronUp,
       color:
-        "text-amber-600 bg-amber-50 dark:bg-amber-950/50 dark:text-amber-400",
+        "text-orange-700 bg-orange-100/80 dark:bg-orange-950/60 dark:text-orange-400",
     },
     medium: {
       icon: Minus,
-      color: "text-blue-600 bg-blue-50 dark:bg-blue-950/50 dark:text-blue-400",
+      color:
+        "text-amber-700 bg-amber-100/80 dark:bg-amber-950/60 dark:text-amber-400",
     },
     low: {
       icon: ChevronDown,
       color:
-        "text-slate-500 bg-slate-100 dark:bg-slate-800 dark:text-slate-400",
+        "text-blue-700 bg-blue-100/80 dark:bg-blue-950/60 dark:text-blue-400",
     },
   };
 
@@ -40,10 +42,10 @@ export function PriorityBadge({ priority }: PriorityBadgeProps) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold ${current.color}`}
+      className={`inline-flex items-center gap-1.5 rounded px-2 py-1 text-[12px] font-bold ${current.color}`}
       title={label}
     >
-      <Icon size={13} />
+      <Icon size={13} className="shrink-0 stroke-[2.5]" />
       <span>{label}</span>
     </span>
   );

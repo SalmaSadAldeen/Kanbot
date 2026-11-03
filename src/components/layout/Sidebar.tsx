@@ -13,17 +13,16 @@ import { ProjectSwitcher } from "../../features/projects/components/ProjectSwitc
 import { useAuth } from "../../features/auth/AuthProvider";
 import { Dialog } from "../ui/Dialog";
 import { useParams } from "react-router";
+
 export function Sidebar() {
   const { t } = useTranslation();
   const isCollapsed = useAppStore((state) => state.isCollapsed);
   const { user, logout } = useAuth();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
-  // جلب الاسم والإيميل الحقيقيين من الـ Auth Context
-  const userName = user?.name || "Salma Sad Aldeen";
-  const userEmail = user?.email || "salma@mail.com";
+  const userName = user?.name ?? "User";
+  const userEmail = user?.email ?? "";
 
-  // توليد الحرفين الأولين مثل (SS) للاختصار
   const userInitials =
     userName
       .trim()
@@ -32,12 +31,10 @@ export function Sidebar() {
       .map((part) => part[0])
       .join("")
       .toUpperCase()
-      .slice(0, 2) || "SS";
+      .slice(0, 2) || "U";
 
   const { projectId } = useParams<{ projectId: string }>();
-
-  // الـ fallback في حال لم يكن هناك مشروع محدد، نوجهه للمشاريع أو نستخدم قيمة افتراضية
-  const activeProjectId = projectId || "default";
+  const activeProjectId = projectId ?? "default";
 
   const projectNavigation = [
     {
@@ -47,7 +44,7 @@ export function Sidebar() {
     },
     {
       name: t.nav.activeSprint,
-      href: `/projects/${activeProjectId}/active-sprint`,
+      href: `/projects/${activeProjectId}/board`,
       icon: PlayCircle,
     },
     {
@@ -57,24 +54,27 @@ export function Sidebar() {
     },
     { name: t.nav.projects, href: "/projects", icon: FolderKanban },
   ];
+
   return (
     <>
       <aside
-        className={`relative flex h-full shrink-0 flex-col border-e border-slate-200 bg-slate-50/50 transition-[width] duration-300 ease-in-out dark:border-slate-800 dark:bg-slate-900 ${
-          isCollapsed ? "w-20" : "w-64"
+        className={`flex h-full flex-col border-e border-slate-200 bg-slate-50/80 transition-[width] duration-300 ease-in-out dark:border-slate-800 dark:bg-slate-900/95 ${
+          isCollapsed ? "lg:w-16 w-64" : "w-64"
         }`}
       >
-        {/* Project Switcher in Sidebar (مع مساحة مريحة لمنع طعج الأيقونة) */}
-        <div className="p-3.5">
+        {/* Project Switcher: تعطيل التفاعل أو الفتح إذا كان السايدبار مغلقاً */}
+        <div
+          className={`p-3 ${isCollapsed ? "pointer-events-none opacity-60" : ""}`}
+        >
           <ProjectSwitcher />
         </div>
 
-        <hr className="mx-3 border-slate-200 dark:border-slate-800" />
+        <div className="mx-3 h-px bg-slate-200 dark:bg-slate-800" />
 
-        {/* Main Navigation (بخطوط أكبر وأوضح) */}
-        <nav aria-label="Main navigation" className="flex-1 space-y-1.5 p-3">
+        {/* Navigation */}
+        <nav aria-label="Main navigation" className="flex-1 space-y-0.5 p-2.5">
           {!isCollapsed && (
-            <p className="px-3 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            <p className="px-3 pb-1.5 pt-1 text-[10px] font-extrabold uppercase tracking-widest text-slate-400 dark:text-slate-500">
               {t.nav.projectSection}
             </p>
           )}
@@ -86,28 +86,40 @@ export function Sidebar() {
               title={isCollapsed ? name : undefined}
               aria-label={isCollapsed ? name : undefined}
               className={({ isActive }) =>
-                `group relative flex h-11 items-center rounded-xl text-sm font-semibold transition-colors duration-150 ${
-                  isCollapsed ? "justify-center px-0" : "gap-3.5 px-3.5"
-                } ${
+                [
+                  "group relative flex h-10 items-center rounded-xl text-sm font-semibold transition-colors duration-150",
+                  isCollapsed ? "justify-center px-0 lg:px-0" : "gap-3 px-3",
                   isActive
-                    ? "bg-slate-200/70 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
-                    : "text-slate-600 hover:bg-slate-200/40 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/50 dark:hover:text-slate-100"
-                }`
+                    ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300"
+                    : "text-slate-600 hover:bg-slate-200/60 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/70 dark:hover:text-slate-100",
+                ].join(" ")
               }
             >
-              <Icon
-                size={19}
-                className="shrink-0 text-slate-500 group-hover:text-slate-900 dark:text-slate-400 dark:group-hover:text-slate-100"
-              />
-              {!isCollapsed && <span className="truncate">{name}</span>}
+              {({ isActive }) => (
+                <>
+                  <Icon
+                    size={18}
+                    className={`shrink-0 transition-colors ${
+                      isActive
+                        ? "text-indigo-600 dark:text-indigo-400"
+                        : "text-slate-400 group-hover:text-slate-700 dark:text-slate-500 dark:group-hover:text-slate-300"
+                    }`}
+                  />
+                  {!isCollapsed && <span className="truncate">{name}</span>}
+                </>
+              )}
             </NavLink>
           ))}
         </nav>
 
-        {/* Footer: Dynamic User Profile */}
-        <div className="mt-auto border-t border-slate-200 p-3.5 dark:border-slate-800">
-          <div className="flex items-center gap-3 rounded-xl p-2 transition hover:bg-slate-200/50 dark:hover:bg-slate-800">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+        {/* Footer: User profile + logout */}
+        <div className="border-t border-slate-200 p-2.5 dark:border-slate-800">
+          <div
+            className={`flex items-center rounded-xl p-2 transition hover:bg-slate-200/50 dark:hover:bg-slate-800/60 ${
+              isCollapsed ? "justify-center" : "gap-2.5"
+            }`}
+          >
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-300">
               {userInitials}
             </div>
             {!isCollapsed && (
@@ -115,7 +127,7 @@ export function Sidebar() {
                 <p className="truncate text-xs font-bold text-slate-800 dark:text-slate-100">
                   {userName}
                 </p>
-                <p className="truncate text-[11px] text-slate-400">
+                <p className="truncate text-[11px] text-slate-400 dark:text-slate-500">
                   {userEmail}
                 </p>
               </div>
@@ -124,18 +136,18 @@ export function Sidebar() {
               <button
                 type="button"
                 onClick={() => setIsLogoutModalOpen(true)}
-                className="text-slate-400 transition hover:text-rose-600 dark:hover:text-rose-400 focus-visible:outline-none"
+                className="shrink-0 text-slate-400 transition hover:text-rose-600 focus-visible:outline-none dark:text-slate-500 dark:hover:text-rose-400 cursor-pointer"
                 title={t.nav.logout}
                 aria-label={t.nav.logout}
               >
-                <LogOut size={17} />
+                <LogOut size={16} />
               </button>
             )}
           </div>
         </div>
       </aside>
 
-      {/* Logout Confirmation Dialog for Sidebar */}
+      {/* Logout Confirmation Dialog */}
       <Dialog
         isOpen={isLogoutModalOpen}
         onClose={() => setIsLogoutModalOpen(false)}
@@ -160,7 +172,7 @@ export function Sidebar() {
             <button
               type="button"
               onClick={() => setIsLogoutModalOpen(false)}
-              className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100 focus-visible:outline-none dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100 focus-visible:outline-none dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 cursor-pointer"
             >
               {t.auth.cancel}
             </button>
@@ -170,7 +182,7 @@ export function Sidebar() {
                 setIsLogoutModalOpen(false);
                 logout();
               }}
-              className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-rose-600/20 transition hover:bg-rose-700 focus-visible:outline-none"
+              className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-rose-600/20 transition hover:bg-rose-700 focus-visible:outline-none cursor-pointer"
             >
               {t.auth.logout}
             </button>

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { request } from "../api/client";
 import { getBacklogTodos } from "../api/backlog";
@@ -17,9 +17,19 @@ export function useBacklogMaster(projectId: string | undefined) {
 
   // States للفلترة والبحث
   const [search, setSearch] = useState<string>("");
+  const [debouncedSearch, setDebouncedSearch] = useState<string>("");
   const [priority, setPriority] = useState<TodoPriority | "all">("all");
   const [type, setType] = useState<TodoType | "all">("all");
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
+
+  // تطبيق الـ Debounce على نص البحث (تأخير 300ms لتخفيف عمليات الفلترة أثناء الكتابة)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [search]);
 
   // 1. جلب مهام الباكلوج
   const backlogQuery = useQuery<Todo[], Error>({
@@ -82,10 +92,10 @@ export function useBacklogMaster(projectId: string | undefined) {
     },
   });
 
-  // دالة الترتيب والفلترة الشاملة (BL-6)
+  // دالة الترتيب والفلترة الشاملة (BL-6) مع اعتماد debouncedSearch
   const filterAndSortTodos = (todos: Todo[]) => {
     const sorted = [...todos].sort((a, b) => a.order - b.order);
-    const query = search.trim().toLocaleLowerCase();
+    const query = debouncedSearch.trim().toLocaleLowerCase();
     return sorted.filter((todo) => {
       const matchesSearch =
         !query ||
@@ -100,7 +110,7 @@ export function useBacklogMaster(projectId: string | undefined) {
 
   const backlogTodos = useMemo(() => {
     return filterAndSortTodos(backlogQuery.data ?? []);
-  }, [backlogQuery.data, search, priority, type]);
+  }, [backlogQuery.data, debouncedSearch, priority, type]);
 
   const toggleSection = (sectionId: string) => {
     setCollapsed((current) => {

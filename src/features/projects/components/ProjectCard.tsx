@@ -144,7 +144,7 @@ export function ProjectCard({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate(`/projects/${project.id}/board`)}
+          onClick={() => navigate(`/projects/${project.id}/backlog`)}
           rightIcon={
             <ArrowRight size={14} className={isRtl ? "rotate-180" : ""} />
           }
