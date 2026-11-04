@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Sparkles,
   RotateCcw,
+  Clock,
 } from "lucide-react";
 import type { Sprint, Todo, StartSprintRequest } from "../../../types/api";
 import { useTranslation } from "../../../store/useAppStore";
@@ -52,10 +53,12 @@ export function SprintHeader({
   const [isDeletingActive, setIsDeletingActive] = useState<boolean>(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // الفحص الدقيق: هل يوجد أي سبرنت آخر في المشروع حالته active؟
   const hasActiveSprint = allSprints.some(
     (s) => s.status === "active" && s.id !== sprint.id,
   );
+
+  // التحقق مما إذا كان السبرنت بحالة planned
+  const isPlanned = sprint.status === "planned";
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -146,6 +149,14 @@ export function SprintHeader({
                 {sprint.name}
               </h2>
 
+              {/* شارة توضيحية لتمييز السبرنتات الـ Planned */}
+              {isPlanned && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-extrabold text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
+                  <Clock size={11} />
+                  Planned
+                </span>
+              )}
+
               <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
                 ({workItemsText})
               </span>
@@ -194,8 +205,6 @@ export function SprintHeader({
                 </span>
               </div>
 
-              {/* زر البدء مع التعطيل البرمجي والبصري إذا وجد سبرنت نشط */}
-              {/* زر البدء مع رسالة توضيحية تظهر عند مرور الماوس (Hover) إذا كان معطلاً */}
               <button
                 type="button"
                 disabled={hasActiveSprint}

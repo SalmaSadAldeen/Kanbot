@@ -1,5 +1,16 @@
 import { useState, type KeyboardEvent } from "react";
 import { useParams, useNavigate } from "react-router";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import toast from "react-hot-toast";
 import { Spinner } from "../../components/ui/Spinner";
 import { useTranslation } from "../../store/useAppStore";
 import type {
@@ -9,8 +20,8 @@ import type {
   StartSprintRequest,
 } from "../../types/api";
 import { useBacklogMaster } from "../../hooks/useBacklogMaster";
-import { useTodos } from "../../hooks/useTodos";
 import { useSprints } from "../../hooks/useSprints";
+import { useTodos } from "../../hooks/useTodos";
 import { BacklogHeader } from "./components/BacklogHeader";
 import { SectionHeader } from "./components/SectionHeader";
 import { BacklogSectionList } from "../todos/BacklogSectionList";
@@ -25,13 +36,15 @@ export function BacklogPage() {
   const { t } = useTranslation();
   const copy = t.projectsPage.backlogPage;
 
+  const { createTodo, isCreating } = useTodos(projectId, "backlog");
+  const { moveTodo } = useTodos(projectId);
+
   const {
     backlogTodos,
     rawBacklogTodos,
     isLoading: isBacklogLoading,
     error: backlogError,
     refetchBacklog,
-    createTodo,
     search,
     setSearch,
     priority,
@@ -41,8 +54,6 @@ export function BacklogPage() {
     collapsed,
     toggleSection,
   } = useBacklogMaster(projectId);
-
-  const { deleteTodo } = useTodos(projectId);
 
   const {
     sprints,
@@ -62,6 +73,17 @@ export function BacklogPage() {
 
   const [isSprintDialogOpen, setIsSprintDialogOpen] = useState(false);
   const [editingSprint, setEditingSprint] = useState<Sprint | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
 
   const totalPoints = rawBacklogTodos.reduce(
     (sum: number, todo: Todo) => sum + (todo.storyPoints ?? 0),
@@ -89,12 +111,18 @@ export function BacklogPage() {
 
   const submitQuickCreate = async () => {
     const title = quickTitle.trim();
-    if (!title || createTodo.isPending) return;
+    if (!title || !projectId) return;
     try {
-      await createTodo.mutateAsync({ title });
+      await createTodo({
+        title,
+        sprintId: null,
+        status: "todo",
+        priority: "medium",
+      });
       setQuickTitle("");
-    } catch {
-      // Handled in mutation state
+      await refetchBacklog();
+    } catch (err) {
+      console.error("Failed to create todo:", err);
     }
   };
 
@@ -108,11 +136,82 @@ export function BacklogPage() {
     }
   };
 
+  const handleGlobalDragEnd = async (event: DragEndEvent): Promise<void> => {
+    const { active, over } = event;
+    if (!over || !projectId) return;
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    const activeTodo = rawBacklogTodos.find((t) => t.id === activeId);
+    if (!activeTodo) return;
+
+    const { targetSprintId, computedIndex } = (() => {
+      if (overId.startsWith("sprint-container-")) {
+        const sprintId = overId.replace("sprint-container-", "");
+        const sprintTodos = rawBacklogTodos.filter(
+          (t) => (t.sprintId ?? null) === sprintId,
+        );
+        return { targetSprintId: sprintId, computedIndex: sprintTodos.length };
+      }
+
+      if (overId === "backlog-container") {
+        return { targetSprintId: null, computedIndex: backlogTodos.length };
+      }
+
+      const overTodo = rawBacklogTodos.find((t) => t.id === overId);
+      if (!overTodo) {
+        return {
+          targetSprintId: activeTodo.sprintId ?? null,
+          computedIndex: 0,
+        };
+      }
+
+      const sprintId = overTodo.sprintId ?? null;
+      const targetList = rawBacklogTodos.filter(
+        (t) => (t.sprintId ?? null) === sprintId,
+      );
+      const overIndex = targetList.findIndex((t) => t.id === overId);
+
+      return {
+        targetSprintId: sprintId,
+        computedIndex: overIndex !== -1 ? overIndex : targetList.length,
+      };
+    })();
+
+    const finalTargetList = rawBacklogTodos.filter(
+      (t) => (t.sprintId ?? null) === targetSprintId,
+    );
+    const clampedPosition = Math.max(
+      0,
+      Math.min(computedIndex, finalTargetList.length),
+    );
+
+    if (activeTodo.sprintId === targetSprintId && activeId === overId) {
+      return;
+    }
+
+    try {
+      await moveTodo({
+        todoId: activeId,
+        data: {
+          sprintId: targetSprintId,
+          status: activeTodo.status,
+          position: clampedPosition,
+        },
+      });
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to move task";
+      toast.error(message);
+    }
+  };
+
   const isLoading = isBacklogLoading || isSprintsLoading;
   const pageError = backlogError || sprintsError;
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 pb-12">
+    <div className="mx-auto w-full max-w-7xl space-y-6 pb-24">
       <BacklogHeader
         copy={copy}
         search={search}
@@ -162,89 +261,98 @@ export function BacklogPage() {
           </div>
         </div>
       ) : (
-        <div className="space-y-6">
-          <SprintsList
-            sprints={sprints}
-            allSprints={allSprints}
-            allTodos={rawBacklogTodos}
-            collapsedMap={collapsed}
-            onToggleSection={toggleSection}
-            onEditSprint={(s) => {
-              setEditingSprint(s);
-              setIsSprintDialogOpen(true);
-            }}
-            onDeleteSprint={(sprintId) =>
-              void deleteSprint.mutateAsync(sprintId)
-            }
-            onStartSprint={async (
-              sprintId: string,
-              data: StartSprintRequest,
-            ) => {
-              await startSprint.mutateAsync({ sprintId, data });
-              if (projectId) {
-                navigate(`/projects/${projectId}/board`);
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={(e) => {
+            void handleGlobalDragEnd(e);
+          }}
+        >
+          <div className="space-y-6">
+            <SprintsList
+              sprints={sprints}
+              allSprints={allSprints}
+              allTodos={rawBacklogTodos}
+              collapsedMap={collapsed}
+              onToggleSection={toggleSection}
+              onEditSprint={(s) => {
+                setEditingSprint(s);
+                setIsSprintDialogOpen(true);
+              }}
+              onDeleteSprint={(sprintId) =>
+                void deleteSprint.mutateAsync(sprintId)
               }
-            }}
-            onSelectTodo={(todo) => {
-              setSelectedTodo(todo);
-              setIsDetailsOpen(true);
-            }}
-            onEditTodo={(todo) => {
-              setSelectedTodo(todo);
-              setIsDetailsOpen(true);
-            }}
-            onDeleteTodo={(todo) => void deleteTodo(todo.id)}
-          />
-
-          <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <SectionHeader
-              title={copy.backlog}
-              count={backlogTodos.length}
-              points={backlogPoints}
-              countLabel={copy.todos}
-              pointsLabel={copy.pts}
-              isCollapsed={collapsed.has("backlog")}
-              onToggle={() => toggleSection("backlog")}
+              onStartSprint={async (
+                sprintId: string,
+                data: StartSprintRequest,
+              ) => {
+                await startSprint.mutateAsync({ sprintId, data });
+                if (projectId) {
+                  navigate(`/projects/${projectId}/board`);
+                }
+              }}
+              onSelectTodo={(todo) => {
+                setSelectedTodo(todo);
+                setIsDetailsOpen(true);
+              }}
+              onEditTodo={(todo) => {
+                setSelectedTodo(todo);
+                setIsDetailsOpen(true);
+              }}
             />
 
-            {!collapsed.has("backlog") && (
-              <>
-                <BacklogSectionList
-                  todos={backlogTodos}
-                  rawTotalCount={rawBacklogTodos.length}
-                  moreLabel={copy.moreActions}
-                  noResultsText={copy.noResults}
-                  emptyStateText={copy.emptyState}
-                  onSelectTodo={(todo) => {
-                    setSelectedTodo(todo);
-                    setIsDetailsOpen(true);
-                  }}
-                  onEditTodo={(todo) => {
-                    setSelectedTodo(todo);
-                    setIsDetailsOpen(true);
-                  }}
-                  onDeleteTodo={(todo) => {
-                    void deleteTodo(todo.id);
-                  }}
-                />
+            {/* تم إزالة overflow-hidden لتجنب قص القائمة المنبثقة لأي عنصر أخير */}
+            <section className="rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <SectionHeader
+                title={copy.backlog}
+                count={backlogTodos.length}
+                points={backlogPoints}
+                countLabel={copy.todos}
+                pointsLabel={copy.pts}
+                isCollapsed={collapsed.has("backlog")}
+                onToggle={() => toggleSection("backlog")}
+              />
 
-                <QuickCreateBar
-                  quickTitle={quickTitle}
-                  setQuickTitle={setQuickTitle}
-                  onQuickKeyDown={onQuickKeyDown}
-                  isPending={createTodo.isPending}
-                  isError={createTodo.isError}
-                  errorMessage={(createTodo.error as Error)?.message}
-                  placeholder={copy.quickCreatePlaceholder}
-                  hintText={copy.quickCreateHint}
-                />
-              </>
-            )}
-          </section>
-        </div>
+              {!collapsed.has("backlog") && (
+                <>
+                  <BacklogSectionList
+                    containerId="backlog-container"
+                    sprintId={null}
+                    todos={backlogTodos}
+                    rawTotalCount={rawBacklogTodos.length}
+                    moreLabel={copy.moreActions}
+                    noResultsText={copy.noResults}
+                    emptyStateText={copy.emptyState}
+                    onSelectTodo={(todo) => {
+                      setSelectedTodo(todo);
+                      setIsDetailsOpen(true);
+                    }}
+                    onEditTodo={(todo) => {
+                      setSelectedTodo(todo);
+                      setIsDetailsOpen(true);
+                    }}
+                    sprintOptions={allSprints.map((sprint) => ({
+                      id: sprint.id,
+                      name: sprint.name,
+                    }))}
+                  />
+
+                  <QuickCreateBar
+                    quickTitle={quickTitle}
+                    setQuickTitle={setQuickTitle}
+                    onQuickKeyDown={onQuickKeyDown}
+                    isPending={isCreating}
+                    isError={false}
+                    placeholder={copy.quickCreatePlaceholder}
+                    hintText={copy.quickCreateHint}
+                  />
+                </>
+              )}
+            </section>
+          </div>
+        </DndContext>
       )}
 
-      {/* مفاتيح دقيقة وفريدة لمنع تكرار مفتاح closed */}
       <SprintFormDialog
         key={
           isSprintDialogOpen
@@ -268,6 +376,7 @@ export function BacklogPage() {
           todo={selectedTodo}
           projectId={projectId}
           isOpen={isDetailsOpen}
+          sprints={allSprints}
           onClose={() => {
             setIsDetailsOpen(false);
             setSelectedTodo(null);

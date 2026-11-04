@@ -80,9 +80,7 @@ export default defineConfig([
 
 Kanbot is a personal Agile project management application (Kanban + Bot) designed for a single user, featuring sprint planning, a task backlog, an active sprint board, and a smart AI assistant.
 
----
-
-## 🚀 Tech Stack & Design Choices
+---## 🚀 Tech Stack & Design Choices
 
 - **Framework:** React 19 + TypeScript (Strict Mode) + Vite.
 - **Routing:** React Router v7 with protected routes (`ProtectedRoute`) and guest route guards (`GuestRoute`).
@@ -93,7 +91,7 @@ Kanbot is a personal Agile project management application (Kanban + Bot) designe
 
 ---
 
-## ✨ Implemented Features (Day 1 & Day 2)
+## ✨ Implemented Features (Day 1, Day 2 & Day 3 - Sprints & Backlog)
 
 ### 1. Authentication & Security (AUTH-1 to AUTH-6)
 
@@ -109,7 +107,17 @@ Kanbot is a personal Agile project management application (Kanban + Bot) designe
 - **Project Switcher:** Custom Jira-style dropdown with project search filtering (`/` shortcut), key badges, and Esc key dismissal.
 - **Project Management:** Project listing page with cards, empty states, creation/edit modals (handles key 409 conflicts), and delete confirmation dialogs.
 
-### 3. Polish & Bonus UX Improvements (§9)
+### 3. Sprints & Backlog Management (SPR-1 to SPR-3)
+
+- **Sprints & Backlog Integration:** Full management of product backlog items, task creation, and sprint organization.
+- **Start Sprint Feature (SPR-3):**
+  - Interactive configuration dialog (`StartSprintDialog`) with automatic date selection (defaults to today + 14 days).
+  - Robust active sprint validation checking (`409 Conflict` prevention).
+  - Dynamic button disabling with clear warning tooltips (`activeSprintWarning`) when another sprint is already active.
+  - Automatic navigation to the project Board view upon successful sprint initiation.
+- **Internationalization (i18n):** Complete bilingual support (English & Arabic) for all new dialogs, buttons, and error messages via `translations.ts`.
+
+### 4. Polish & Bonus UX Improvements (§9)
 
 - **Dark Mode Persistence:** Automatically syncs preference with `localStorage` and applies the `dark` class to `document.documentElement` without layout flash.
 - **Global Keyboard Shortcuts:** Supports `Esc` for dialog closing and `/` for fast project search focus.

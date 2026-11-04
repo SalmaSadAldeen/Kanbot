@@ -25,7 +25,6 @@ export function QuickCreateBar({
 }: QuickCreateBarProps) {
   return (
     <div className="border-t border-slate-100/80 bg-slate-50/60 p-3 dark:border-slate-800/40 dark:bg-slate-900/40">
-      {" "}
       <div className="flex items-center gap-3 px-2">
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400 shrink-0">
           <Plus size={16} />
@@ -43,7 +42,7 @@ export function QuickCreateBar({
         {isPending && <Spinner size="sm" inline className="text-indigo-600" />}
       </div>
       <p className="ms-10 mt-1 text-[11px] font-medium text-slate-400">
-        {isError ? errorMessage : hintText}
+        {isError && errorMessage ? errorMessage : hintText}
       </p>
     </div>
   );

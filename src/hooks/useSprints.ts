@@ -10,6 +10,7 @@ import type {
   CreateSprintRequest,
   UpdateSprintRequest,
   StartSprintRequest,
+  Sprint,
 } from "../types/api";
 
 export function useSprints(projectId: string | undefined) {
@@ -22,24 +23,20 @@ export function useSprints(projectId: string | undefined) {
       return getProjectSprints(projectId);
     },
     enabled: !!projectId,
+    staleTime: 1000 * 60 * 5, // حماية الكاش لمدة 5 دقائق
   });
-
-  const invalidateSprints = () => {
-    if (!projectId) return;
-    void queryClient.invalidateQueries({
-      queryKey: ["projects", projectId, "sprints"],
-    });
-    void queryClient.invalidateQueries({
-      queryKey: ["projects", projectId, "backlog-todos"],
-    });
-  };
 
   const createSprintMutation = useMutation({
     mutationFn: (data: CreateSprintRequest = {}) => {
       if (!projectId) throw new Error("Project ID is required");
       return createSprint(projectId, data);
     },
-    onSuccess: invalidateSprints,
+    onSuccess: (newSprint) => {
+      queryClient.setQueryData(
+        ["projects", projectId, "sprints"],
+        (old: Sprint[] = []) => [...old, newSprint],
+      );
+    },
   });
 
   const updateSprintMutation = useMutation({
@@ -50,12 +47,23 @@ export function useSprints(projectId: string | undefined) {
       sprintId: string;
       data: UpdateSprintRequest;
     }) => updateSprint(sprintId, data),
-    onSuccess: invalidateSprints,
+    onSuccess: (updatedSprint) => {
+      queryClient.setQueryData(
+        ["projects", projectId, "sprints"],
+        (old: Sprint[] = []) =>
+          old.map((s) => (s.id === updatedSprint.id ? updatedSprint : s)),
+      );
+    },
   });
 
   const deleteSprintMutation = useMutation({
     mutationFn: (sprintId: string) => deleteSprint(sprintId),
-    onSuccess: invalidateSprints,
+    onSuccess: (_, deletedSprintId) => {
+      queryClient.setQueryData(
+        ["projects", projectId, "sprints"],
+        (old: Sprint[] = []) => old.filter((s) => s.id !== deletedSprintId),
+      );
+    },
   });
 
   const startSprintMutation = useMutation({
@@ -66,7 +74,13 @@ export function useSprints(projectId: string | undefined) {
       sprintId: string;
       data: StartSprintRequest;
     }) => startSprint(sprintId, data),
-    onSuccess: invalidateSprints,
+    onSuccess: (startedSprint) => {
+      queryClient.setQueryData(
+        ["projects", projectId, "sprints"],
+        (old: Sprint[] = []) =>
+          old.map((s) => (s.id === startedSprint.id ? startedSprint : s)),
+      );
+    },
   });
 
   const allSprints = sprintsQuery.data ?? [];
@@ -74,7 +88,7 @@ export function useSprints(projectId: string | undefined) {
 
   return {
     sprints: plannedSprints,
-    allSprints, // هذه هي المصفوفة الشاملة التي تحل مشكلة تعطيل الزر تماماً
+    allSprints,
     isLoading: sprintsQuery.isLoading,
     error: sprintsQuery.error,
     refetch: sprintsQuery.refetch,

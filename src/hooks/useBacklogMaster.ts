@@ -1,28 +1,16 @@
 import { useState, useMemo, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { getProjectTodos } from "../api/todos";
 import { request } from "../api/client";
-import { getBacklogTodos } from "../api/backlog";
-import { moveTodo } from "../api/todos";
-import type {
-  Sprint,
-  Todo,
-  CreateTodoRequest,
-  MoveTodoRequest,
-  TodoPriority,
-  TodoType,
-} from "../types/api";
+import type { Sprint, Todo, TodoPriority, TodoType } from "../types/api";
 
 export function useBacklogMaster(projectId: string | undefined) {
-  const queryClient = useQueryClient();
-
-  // States للفلترة والبحث
   const [search, setSearch] = useState<string>("");
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
   const [priority, setPriority] = useState<TodoPriority | "all">("all");
   const [type, setType] = useState<TodoType | "all">("all");
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
 
-  // تطبيق الـ Debounce على نص البحث (تأخير 300ms لتخفيف عمليات الفلترة أثناء الكتابة)
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
@@ -31,15 +19,16 @@ export function useBacklogMaster(projectId: string | undefined) {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // 1. جلب مهام الباكلوج
-  const backlogQuery = useQuery<Todo[], Error>({
-    queryKey: ["projects", projectId, "backlog-todos"],
+  // 1. جلب جميع مهام المشروع (ليشمل مهام الباكلوغ ومهام السبرنتات معاً)
+  const todosQuery = useQuery<Todo[], Error>({
+    queryKey: ["projects", projectId, "todos", "all"],
     queryFn: () =>
-      projectId ? getBacklogTodos(projectId) : Promise.resolve([]),
+      projectId ? getProjectTodos(projectId) : Promise.resolve([]),
     enabled: Boolean(projectId),
+    staleTime: 1000 * 60 * 2,
   });
 
-  // 2. جلب سبرنتات المشروع
+  // 2. جلب سبرنتات المشروع مع كاش آمن
   const sprintsQuery = useQuery<Sprint[], Error>({
     queryKey: ["projects", projectId, "sprints"],
     queryFn: async () => {
@@ -51,48 +40,19 @@ export function useBacklogMaster(projectId: string | undefined) {
       return response.sprints;
     },
     enabled: Boolean(projectId),
+    staleTime: 1000 * 60 * 5,
   });
 
-  // فلترة السبرنتات المخطط لها فقط (Planned Sprints)
   const plannedSprints = useMemo(() => {
     return (sprintsQuery.data ?? []).filter((s) => s.status === "planned");
   }, [sprintsQuery.data]);
 
-  // 3. إضافة مهمة جديدة للباكلوج (Quick Create - BL-2)
-  const createTodoMutation = useMutation({
-    mutationFn: async (data: CreateTodoRequest) => {
-      if (!projectId) throw new Error("A project must be selected.");
-      const payload: CreateTodoRequest = {
-        ...data,
-        sprintId: null,
-      };
-      const response = await request<{ todo: Todo }>(
-        "POST",
-        `/projects/${projectId}/todos`,
-        payload,
-      );
-      return response.todo;
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: ["projects", projectId, "backlog-todos"],
-      });
-      void queryClient.invalidateQueries({ queryKey: ["projects", projectId] });
-    },
-  });
+  // استخراج مهام الباكلوغ فقط (التي لا تنتمي لأي سبرنت: sprintId === null)
+  const pureBacklogTodos = useMemo(() => {
+    const all = todosQuery.data ?? [];
+    return all.filter((todo) => todo.sprintId === null);
+  }, [todosQuery.data]);
 
-  // 4. نقل أو إعادة ترتيب المهام
-  const moveTodoMutation = useMutation({
-    mutationFn: ({ todoId, data }: { todoId: string; data: MoveTodoRequest }) =>
-      moveTodo(todoId, data),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: ["projects", projectId, "backlog-todos"],
-      });
-    },
-  });
-
-  // دالة الترتيب والفلترة الشاملة (BL-6) مع اعتماد debouncedSearch
   const filterAndSortTodos = (todos: Todo[]) => {
     const sorted = [...todos].sort((a, b) => a.order - b.order);
     const query = debouncedSearch.trim().toLocaleLowerCase();
@@ -108,9 +68,10 @@ export function useBacklogMaster(projectId: string | undefined) {
     });
   };
 
+  // المهام المعروضة في قسم الباكلوغ بعد الفلترة والبحث
   const backlogTodos = useMemo(() => {
-    return filterAndSortTodos(backlogQuery.data ?? []);
-  }, [backlogQuery.data, debouncedSearch, priority, type]);
+    return filterAndSortTodos(pureBacklogTodos);
+  }, [pureBacklogTodos, debouncedSearch, priority, type]);
 
   const toggleSection = (sectionId: string) => {
     setCollapsed((current) => {
@@ -123,16 +84,13 @@ export function useBacklogMaster(projectId: string | undefined) {
 
   return {
     backlogTodos,
-    rawBacklogTodos: backlogQuery.data ?? [],
+    rawBacklogTodos: todosQuery.data ?? [], // تحتوي على كل مهام المشروع لتعمل السبرنتات بشكل صحيح
     sprints: plannedSprints,
     allSprints: sprintsQuery.data ?? [],
-    isLoading: backlogQuery.isLoading || sprintsQuery.isLoading,
-    error: backlogQuery.error || sprintsQuery.error,
-    refetchBacklog: backlogQuery.refetch,
+    isLoading: todosQuery.isLoading || sprintsQuery.isLoading,
+    error: todosQuery.error || sprintsQuery.error,
+    refetchBacklog: todosQuery.refetch,
     refetchSprints: sprintsQuery.refetch,
-    createTodo: createTodoMutation,
-    moveTodo: moveTodoMutation,
-    // فلترة وبحث
     search,
     setSearch,
     priority,

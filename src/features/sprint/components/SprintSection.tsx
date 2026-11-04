@@ -14,7 +14,6 @@ interface SprintSectionProps {
   onStartSprint: (sprintId: string, data: StartSprintRequest) => Promise<void>;
   onSelectTodo: (todo: Todo) => void;
   onEditTodo: (todo: Todo) => void;
-  onDeleteTodo: (todo: Todo) => void;
 }
 
 export function SprintSection({
@@ -28,13 +27,12 @@ export function SprintSection({
   onStartSprint,
   onSelectTodo,
   onEditTodo,
-  onDeleteTodo,
 }: SprintSectionProps) {
   const { t } = useTranslation();
   const copy = t.projectsPage.backlogPage;
 
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs transition-all duration-200 hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700">
+    <section className="relative  rounded-2xl border border-slate-200/80 bg-white shadow-xs transition-all duration-200 hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700">
       <SprintHeader
         sprint={sprint}
         todos={todos}
@@ -48,6 +46,8 @@ export function SprintSection({
 
       {!isCollapsed && (
         <BacklogSectionList
+          containerId={`sprint-container-${sprint.id}`}
+          sprintId={sprint.id}
           todos={todos}
           rawTotalCount={todos.length}
           moreLabel={copy.moreActions}
@@ -55,7 +55,9 @@ export function SprintSection({
           emptyStateText={copy.emptyState}
           onSelectTodo={onSelectTodo}
           onEditTodo={onEditTodo}
-          onDeleteTodo={onDeleteTodo}
+          sprintOptions={allSprints
+            .filter((candidate) => candidate.id !== sprint.id)
+            .map((candidate) => ({ id: candidate.id, name: candidate.name }))}
         />
       )}
     </section>

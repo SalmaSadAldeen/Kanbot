@@ -8,10 +8,12 @@ import {
   Layers,
   Flame,
   ChevronDown,
+  ListTodo,
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import type {
   Todo,
+  Sprint,
   TodoPriority,
   TodoType,
   StoryPoints,
@@ -26,6 +28,7 @@ interface TodoDetailsDialogProps {
   projectId: string;
   isOpen: boolean;
   onClose: () => void;
+  sprints?: Sprint[];
 }
 
 export function TodoDetailsDialog({
@@ -33,6 +36,7 @@ export function TodoDetailsDialog({
   projectId,
   isOpen,
   onClose,
+  sprints = [],
 }: TodoDetailsDialogProps) {
   const { t } = useTranslation();
   const dict = t.projectsPage.todoDetails;
@@ -54,6 +58,9 @@ export function TodoDetailsDialog({
     () => todo?.status ?? "todo",
   );
   const [dueDate, setDueDate] = useState<string>(() => todo?.dueDate ?? "");
+  const [sprintId, setSprintId] = useState<string | null>(
+    () => todo?.sprintId ?? null,
+  );
 
   if (!isOpen || !todo) return null;
 
@@ -68,6 +75,7 @@ export function TodoDetailsDialog({
         storyPoints,
         status,
         dueDate: dueDate || null,
+        sprintId,
       },
     });
     onClose();
@@ -75,7 +83,6 @@ export function TodoDetailsDialog({
 
   return (
     <>
-      {/* Scoped keyframes */}
       <style>{`
         @keyframes detailsFadeIn {
           from { opacity: 0; }
@@ -87,19 +94,17 @@ export function TodoDetailsDialog({
         }
       `}</style>
 
-      {/* Backdrop */}
       <div
         className="fixed inset-0 z-50 flex justify-end bg-slate-950/60 backdrop-blur-sm"
         style={{ animation: "detailsFadeIn 0.2s ease" }}
       >
-        {/* Panel */}
         <div
           className="relative flex h-full w-full max-w-xl flex-col overflow-hidden border-s border-slate-200/80 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900"
           style={{
             animation: "detailsSlideIn 0.25s cubic-bezier(0.16,1,0.3,1)",
           }}
         >
-          {/* ── Header ── */}
+          {/* Header */}
           <div className="flex shrink-0 items-center justify-between border-b border-slate-100 bg-gradient-to-r from-slate-50/90 via-white to-white px-8 py-5 dark:border-slate-800 dark:from-slate-900/90 dark:via-slate-900 dark:to-slate-900">
             <div className="flex items-center gap-3">
               <span className="flex h-8 items-center justify-center rounded-xl bg-indigo-600/10 px-3 font-mono text-xs font-bold text-indigo-600 ring-1 ring-indigo-500/20 dark:bg-indigo-500/20 dark:text-indigo-400">
@@ -124,9 +129,8 @@ export function TodoDetailsDialog({
             </button>
           </div>
 
-          {/* ── Body ── */}
+          {/* Body */}
           <div className="flex-1 space-y-5 overflow-y-auto px-8 py-6">
-            {/* Title */}
             <div className="space-y-2">
               <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 {dict.title}
@@ -138,9 +142,35 @@ export function TodoDetailsDialog({
               />
             </div>
 
-            {/* Priority / Type / Points */}
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <ListTodo size={12} className="text-violet-500" /> Target Sprint / Backlog
+              </label>
+              <div className="relative">
+                <select
+                  value={sprintId ?? "backlog"}
+                  onChange={(e) =>
+                    setSprintId(
+                      e.target.value === "backlog" ? null : e.target.value,
+                    )
+                  }
+                  className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-slate-50 pl-3 pr-8 text-xs font-bold text-slate-900 outline-none transition focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                >
+                  <option value="backlog">📦 Backlog (No Sprint)</option>
+                  {sprints.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      🚀 {s.name} ({s.status})
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  size={13}
+                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+              </div>
+            </div>
+
             <div className="grid grid-cols-3 gap-3">
-              {/* Priority */}
               <div className="space-y-1.5">
                 <label className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   <Flame size={11} className="text-amber-500" /> {dict.priority}
@@ -166,7 +196,6 @@ export function TodoDetailsDialog({
                 </div>
               </div>
 
-              {/* Type */}
               <div className="space-y-1.5">
                 <label className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   <Layers size={11} className="text-indigo-500" /> {dict.type}
@@ -190,7 +219,6 @@ export function TodoDetailsDialog({
                 </div>
               </div>
 
-              {/* Points */}
               <div className="space-y-1.5">
                 <label className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   <Tag size={11} className="text-emerald-500" /> {dict.points}
@@ -222,7 +250,6 @@ export function TodoDetailsDialog({
               </div>
             </div>
 
-            {/* Due Date + Status */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -259,7 +286,6 @@ export function TodoDetailsDialog({
               </div>
             </div>
 
-            {/* Description */}
             <div className="space-y-1.5">
               <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 {dict.description}
@@ -273,7 +299,6 @@ export function TodoDetailsDialog({
               />
             </div>
 
-            {/* Metadata (مترجمة بالكامل الآن) */}
             <div className="space-y-2 rounded-xl border border-slate-200/60 bg-slate-50 p-3.5 text-[11px] text-slate-600 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-400">
               <div className="flex items-center gap-2">
                 <Clock size={11} className="shrink-0 text-slate-400" />
@@ -305,7 +330,7 @@ export function TodoDetailsDialog({
             </div>
           </div>
 
-          {/* ── Footer ── */}
+          {/* Footer */}
           <div className="flex shrink-0 items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/90 px-8 py-4 dark:border-slate-800 dark:bg-slate-900/90">
             <Button
               variant="outline"
@@ -317,7 +342,7 @@ export function TodoDetailsDialog({
             </Button>
             <Button
               size="sm"
-              onClick={handleSave}
+              onClick={() => void handleSave()}
               disabled={isUpdating}
               isLoading={isUpdating}
               className="h-10 rounded-xl px-5 text-xs font-semibold cursor-pointer"
