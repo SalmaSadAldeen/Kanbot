@@ -6,6 +6,7 @@ import { RegisterPage } from "./features/auth/pages/RegisterPage";
 import { AppShell } from "./components/layout/AppShell"; // استيراد الهيكل العام
 import { ProjectsPage } from "./features/projects/ProjectsPage";
 import { BacklogPage } from "./features/backlog/BacklogPage";
+import  { SprintsPage } from "./features/sprint/SprintsPage";
 export const router = createBrowserRouter([
   {
     element: <GuestRoute />,
@@ -43,7 +44,7 @@ export const router = createBrowserRouter([
           },
           {
             path: "/projects/:projectId/sprints",
-            element: <div className="p-4">Sprints Page</div>,
+            element: <SprintsPage />,
           },
           {
             path: "/settings",

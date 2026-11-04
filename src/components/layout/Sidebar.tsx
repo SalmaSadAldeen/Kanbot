@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { NavLink } from "react-router";
+import { useState, useMemo } from "react";
+import { NavLink, useParams } from "react-router";
 import {
   ListTodo,
   PlayCircle,
@@ -12,7 +12,6 @@ import { useTranslation, useAppStore } from "../../store/useAppStore";
 import { ProjectSwitcher } from "../../features/projects/components/ProjectSwitcher";
 import { useAuth } from "../../features/auth/AuthProvider";
 import { Dialog } from "../ui/Dialog";
-import { useParams } from "react-router";
 
 export function Sidebar() {
   const { t } = useTranslation();
@@ -34,26 +33,43 @@ export function Sidebar() {
       .slice(0, 2) || "U";
 
   const { projectId } = useParams<{ projectId: string }>();
-  const activeProjectId = projectId ?? "default";
 
-  const projectNavigation = [
-    {
-      name: t.nav.backlog,
-      href: `/projects/${activeProjectId}/backlog`,
-      icon: ListTodo,
-    },
-    {
-      name: t.nav.activeSprint,
-      href: `/projects/${activeProjectId}/board`,
-      icon: PlayCircle,
-    },
-    {
-      name: t.nav.sprints,
-      href: `/projects/${activeProjectId}/sprints`,
-      icon: Zap,
-    },
-    { name: t.nav.projects, href: "/projects", icon: FolderKanban },
-  ];
+  // التحقق من أن معرف المشروع حقيقي وليس فارغاً أو كلمة وهمية
+  const isValidProject = projectId && projectId !== "select";
+
+  // تعريف الروابط باستخدام useMemo ومنع تكرار المسارات أو المفاتيح
+  const projectNavigation = useMemo(() => {
+    return [
+      {
+        id: "nav-backlog",
+        name: t.nav.backlog,
+        href: isValidProject ? `/projects/${projectId}/backlog` : "/projects",
+        icon: ListTodo,
+        exact: true,
+      },
+      {
+        id: "nav-board",
+        name: t.nav.activeSprint,
+        href: isValidProject ? `/projects/${projectId}/board` : "/projects",
+        icon: PlayCircle,
+        exact: true,
+      },
+      {
+        id: "nav-sprints",
+        name: t.nav.sprints,
+        href: isValidProject ? `/projects/${projectId}/sprints` : "/projects",
+        icon: Zap,
+        exact: true,
+      },
+      {
+        id: "nav-projects",
+        name: t.nav.projects,
+        href: "/projects",
+        icon: FolderKanban,
+        exact: true,
+      },
+    ];
+  }, [isValidProject, projectId, t]);
 
   return (
     <>
@@ -62,7 +78,6 @@ export function Sidebar() {
           isCollapsed ? "lg:w-16 w-64" : "w-64"
         }`}
       >
-        {/* Project Switcher: تعطيل التفاعل أو الفتح إذا كان السايدبار مغلقاً */}
         <div
           className={`p-3 ${isCollapsed ? "pointer-events-none opacity-60" : ""}`}
         >
@@ -71,7 +86,6 @@ export function Sidebar() {
 
         <div className="mx-3 h-px bg-slate-200 dark:bg-slate-800" />
 
-        {/* Navigation */}
         <nav aria-label="Main navigation" className="flex-1 space-y-0.5 p-2.5">
           {!isCollapsed && (
             <p className="px-3 pb-1.5 pt-1 text-[10px] font-extrabold uppercase tracking-widest text-slate-400 dark:text-slate-500">
@@ -79,10 +93,11 @@ export function Sidebar() {
             </p>
           )}
 
-          {projectNavigation.map(({ name, href, icon: Icon }) => (
+          {projectNavigation.map(({ id, name, href, icon: Icon, exact }) => (
             <NavLink
-              key={href}
+              key={id}
               to={href}
+              end={exact}
               title={isCollapsed ? name : undefined}
               aria-label={isCollapsed ? name : undefined}
               className={({ isActive }) =>

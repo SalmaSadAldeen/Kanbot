@@ -5,11 +5,13 @@ import {
   updateSprint,
   deleteSprint,
   startSprint,
+  completeSprint,
 } from "../api/sprints";
 import type {
   CreateSprintRequest,
   UpdateSprintRequest,
   StartSprintRequest,
+  CompleteSprintRequest,
   Sprint,
 } from "../types/api";
 
@@ -23,7 +25,7 @@ export function useSprints(projectId: string | undefined) {
       return getProjectSprints(projectId);
     },
     enabled: !!projectId,
-    staleTime: 1000 * 60 * 5, // حماية الكاش لمدة 5 دقائق
+    staleTime: 1000 * 60 * 5,
   });
 
   const createSprintMutation = useMutation({
@@ -83,6 +85,23 @@ export function useSprints(projectId: string | undefined) {
     },
   });
 
+  const completeSprintMutation = useMutation({
+    mutationFn: ({
+      sprintId,
+      data,
+    }: {
+      sprintId: string;
+      data: CompleteSprintRequest;
+    }) => completeSprint(sprintId, data),
+    onSuccess: (completedSprint) => {
+      queryClient.setQueryData(
+        ["projects", projectId, "sprints"],
+        (old: Sprint[] = []) =>
+          old.map((s) => (s.id === completedSprint.id ? completedSprint : s)),
+      );
+    },
+  });
+
   const allSprints = sprintsQuery.data ?? [];
   const plannedSprints = allSprints.filter((s) => s.status === "planned");
 
@@ -95,6 +114,7 @@ export function useSprints(projectId: string | undefined) {
     createSprint: createSprintMutation,
     updateSprint: updateSprintMutation,
     deleteSprint: deleteSprintMutation,
+    completeSprint: completeSprintMutation,
     startSprint: startSprintMutation,
   };
 }

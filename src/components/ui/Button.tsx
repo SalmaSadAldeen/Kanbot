@@ -37,7 +37,7 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const sizes = {
-    sm: "h-8 px-3 text-xs rounded-lg gap-1.5",
+    sm: "h-8 px-3 text-xs rounded-lg gap-2",
     md: "h-10 px-4 text-sm rounded-xl gap-2",
     lg: "h-12 px-6 text-base rounded-xl gap-2.5",
   };
@@ -48,9 +48,17 @@ export const Button: React.FC<ButtonProps> = ({
       disabled={disabled || isLoading}
       {...props}
     >
-      {isLoading ? <Loader2 size={16} className="animate-spin" /> : leftIcon}
-      <span>{children}</span>
-      {!isLoading && rightIcon}
+      {isLoading ? (
+        <Loader2 size={16} className="animate-spin shrink-0" />
+      ) : (
+        leftIcon && (
+          <span className="inline-flex items-center shrink-0">{leftIcon}</span>
+        )
+      )}
+      <span className="inline-flex items-center">{children}</span>
+      {!isLoading && rightIcon && (
+        <span className="inline-flex items-center shrink-0">{rightIcon}</span>
+      )}
     </button>
   );
 };
