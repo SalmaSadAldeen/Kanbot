@@ -6,6 +6,7 @@ import type {
   StartSprintRequest,
   CompleteSprintRequest,
 } from "../types/api";
+import type { SprintBoardResponse } from "../types/api";
 
 // جلب السبرنتات الخاصة بالمشروع
 export async function getProjectSprints(projectId: string): Promise<Sprint[]> {
@@ -73,3 +74,8 @@ export async function completeSprint(
   return res.sprint;
 }
 
+
+// جلب تفاصيل السبرنت ومهام الـ Board مرتبة حسب الأعمدة (SPR-4)
+export async function getSprintBoard(sprintId: string): Promise<SprintBoardResponse> {
+  return await request<SprintBoardResponse>("GET", `/sprints/${sprintId}/todos`);
+}

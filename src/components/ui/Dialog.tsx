@@ -44,7 +44,7 @@ export const Dialog: React.FC<DialogProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="dialog-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 sm:p-4"
     >
       {/* Backdrop */}
       <div
@@ -56,7 +56,7 @@ export const Dialog: React.FC<DialogProps> = ({
 
       {/* Panel */}
       <div
-        className={`relative z-10 w-full ${maxWidthClasses[maxWidth]} rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900`}
+        className={`relative z-10 my-auto max-h-[calc(100dvh-1.5rem)] w-full overflow-y-auto ${maxWidthClasses[maxWidth]} rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-slate-900 sm:max-h-[calc(100dvh-2rem)] sm:p-6`}
         style={{ animation: "dialogSlideIn 0.18s cubic-bezier(0.16,1,0.3,1)" }}
       >
         {/* Header */}

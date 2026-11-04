@@ -137,7 +137,7 @@ export function TodoRow({
         ref={setNodeRef}
         style={style}
         onClick={onSelect}
-        className={`grid grid-cols-[1.25rem_auto_minmax(12rem,1fr)_auto_auto_auto_auto] items-center gap-4 px-4 py-3 transition-colors duration-200 cursor-pointer outline-none focus:outline-none ring-0 focus:ring-0 ${className} ${
+        className={`grid grid-cols-[1.25rem_auto_minmax(0,1fr)_auto] items-center gap-2 px-3 py-3 transition-colors duration-200 cursor-pointer outline-none focus:outline-none ring-0 focus:ring-0 sm:grid-cols-[1.25rem_auto_minmax(12rem,1fr)_auto_auto_auto_auto] sm:gap-4 sm:px-4 ${className} ${
           isPendingDelete
             ? "border border-amber-300 bg-amber-50/60 dark:border-amber-900/60 dark:bg-amber-950/20 rounded-xl"
             : "hover:bg-slate-50/80 dark:hover:bg-slate-800/40"

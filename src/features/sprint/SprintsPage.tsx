@@ -65,7 +65,7 @@ export function SprintsPage() {
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 pb-12 px-4">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200 pb-4 dark:border-slate-800">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
         <div>
           <h1 className="text-lg font-black text-slate-900 dark:text-slate-100">
             {sCopy.title}
@@ -103,7 +103,7 @@ export function SprintsPage() {
                       : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900"
                   }`}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                       {sprint.name}
                     </h4>
@@ -119,8 +119,8 @@ export function SprintsPage() {
                       {sprint.status}
                     </span>
                   </div>
-                  <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
-                    <span className="flex items-center gap-1">
+                  <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+                    <span className="flex min-w-0 items-center gap-1">
                       <Calendar size={12} className="shrink-0" />{" "}
                       {sprint.startDate ?? "No start"} –{" "}
                       {sprint.endDate ?? "No end"}

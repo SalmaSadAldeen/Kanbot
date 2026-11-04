@@ -26,6 +26,8 @@ export function useSprints(projectId: string | undefined) {
     },
     enabled: !!projectId,
     staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 
   const createSprintMutation = useMutation({
@@ -33,11 +35,21 @@ export function useSprints(projectId: string | undefined) {
       if (!projectId) throw new Error("Project ID is required");
       return createSprint(projectId, data);
     },
-    onSuccess: (newSprint) => {
+    onSuccess: (newSprint, variables) => {
       queryClient.setQueryData(
         ["projects", projectId, "sprints"],
         (old: Sprint[] = []) => [...old, newSprint],
       );
+      if (variables.todoIds?.length) {
+        void Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: ["projects", projectId, "todos"],
+          }),
+          queryClient.invalidateQueries({
+            queryKey: ["projects", projectId, "sprints"],
+          }),
+        ]);
+      }
     },
   });
 
@@ -93,12 +105,21 @@ export function useSprints(projectId: string | undefined) {
       sprintId: string;
       data: CompleteSprintRequest;
     }) => completeSprint(sprintId, data),
-    onSuccess: (completedSprint) => {
+    onSuccess: async (completedSprint) => {
       queryClient.setQueryData(
         ["projects", projectId, "sprints"],
         (old: Sprint[] = []) =>
           old.map((s) => (s.id === completedSprint.id ? completedSprint : s)),
       );
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["projects", projectId, "todos"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["projects", projectId, "sprints"],
+        }),
+      ]);
     },
   });
 

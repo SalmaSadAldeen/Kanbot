@@ -35,8 +35,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       return response.user;
     },
     enabled: Boolean(token),
-    retry: false,
+    retry: 1,
     staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
 
   const logout = useCallback(() => {

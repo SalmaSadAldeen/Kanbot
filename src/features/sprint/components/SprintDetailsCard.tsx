@@ -64,7 +64,7 @@ export function SprintDetailsCard({
               {currentSprint.status}
             </span>
           </div>
-          <p className="text-xs text-slate-500 flex items-center gap-2">
+          <p className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
             <Calendar size={13} className="text-slate-400 shrink-0" />
             <span>
               {currentSprint.startDate ?? "No start"} –{" "}

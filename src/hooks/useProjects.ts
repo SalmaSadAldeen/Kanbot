@@ -28,6 +28,8 @@ export function useProjects() {
     queryKey: projectsKeys.all, // اسم الكاش
     queryFn: listProjects, // الدالة التي تجلب البيانات من السيرفر
     staleTime: 1000 * 60 * 5, // حماية الكاش: تبقى البيانات صالحة ولا يتم إرسال طلب جديد لمدة 5 دقائق
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 
   // 3. إنشاء مشروع جديد (POST / Mutation)
@@ -136,5 +138,7 @@ export function useProject(id: string) {
     queryFn: () => getProject(id),
     enabled: !!id, // لا يتم تنفيذ الطلب إلا إذا كان الـ id موجوداً حقاً
     staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 }

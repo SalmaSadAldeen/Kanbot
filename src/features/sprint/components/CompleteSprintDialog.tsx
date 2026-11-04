@@ -26,19 +26,27 @@ export function CompleteSprintDialog({
 }: CompleteSprintDialogProps) {
   const [destination, setDestination] = useState<string>("backlog");
   const [generateAi, setGenerateAi] = useState<boolean>(true);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   if (!isOpen || !activeSprint) return null;
 
   const handleComplete = async () => {
     const target = destination === "backlog" ? null : destination;
-    await onConfirm(target, generateAi);
-    onClose();
+    setSubmitError(null);
+    try {
+      await onConfirm(target, generateAi);
+      onClose();
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error ? error.message : "Failed to complete sprint",
+      );
+    }
   };
 
   return (
     <Dialog
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={() => !isPending && onClose()}
       title={`Complete ${activeSprint.name}`}
     >
       <div className="space-y-4 py-2">
@@ -54,7 +62,7 @@ export function CompleteSprintDialog({
             <select
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
-              className="h-10 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-3 pr-8 text-xs font-semibold text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              className="h-10 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-3 pe-8 text-xs font-semibold text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
             >
               <option value="backlog">Backlog (Default)</option>
               {plannedSprints.map((s) => (
@@ -65,10 +73,16 @@ export function CompleteSprintDialog({
             </select>
             <Layers
               size={13}
-              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+              className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-slate-400"
             />
           </div>
         </div>
+
+        {submitError && (
+          <p role="alert" className="text-xs font-medium text-rose-600 dark:text-rose-400">
+            {submitError}
+          </p>
+        )}
 
         <div className="flex items-center gap-2 pt-2">
           <input

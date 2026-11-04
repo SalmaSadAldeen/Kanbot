@@ -12,6 +12,7 @@ import type {
   UpdateTodoRequest,
   MoveTodoRequest,
 } from "../types/api";
+import type { Todo } from "../types/api"; // أو مسار الـ Todo الصحيح عندك
 import toast from "react-hot-toast";
 
 export function useTodoDetails(todoId: string | undefined) {
@@ -20,18 +21,24 @@ export function useTodoDetails(todoId: string | undefined) {
     queryFn: () => getTodoById(todoId!),
     enabled: Boolean(todoId),
     staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 }
 
 export function useTodos(projectId: string | undefined, sprintId?: string) {
   const queryClient = useQueryClient();
 
+  const queryKey = ["projects", projectId, "todos", sprintId ?? "all"];
+
   const todosQuery = useQuery({
-    queryKey: ["projects", projectId, "todos", sprintId ?? "all"],
+    queryKey,
     queryFn: () =>
       projectId ? getProjectTodos(projectId, sprintId) : Promise.resolve([]),
     enabled: Boolean(projectId),
-    staleTime: 1000 * 60 * 2,
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 
   const createMutation = useMutation({
@@ -41,9 +48,14 @@ export function useTodos(projectId: string | undefined, sprintId?: string) {
     },
     onSuccess: async () => {
       toast.success("Todo created successfully");
-      await queryClient.invalidateQueries({
-        queryKey: ["projects", projectId, "todos"],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["projects", projectId, "todos"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["projects", projectId, "sprints"],
+        }),
+      ]);
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to create todo");
@@ -61,9 +73,14 @@ export function useTodos(projectId: string | undefined, sprintId?: string) {
     onSuccess: async (updatedTodo) => {
       toast.success("Todo updated successfully");
       queryClient.setQueryData(["todo", updatedTodo.id], updatedTodo);
-      await queryClient.invalidateQueries({
-        queryKey: ["projects", projectId, "todos"],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["projects", projectId, "todos"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["projects", projectId, "sprints"],
+        }),
+      ]);
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to update todo");
@@ -74,26 +91,65 @@ export function useTodos(projectId: string | undefined, sprintId?: string) {
     mutationFn: (todoId: string) => deleteTodo(todoId),
     onSuccess: async () => {
       toast.success("Todo deleted successfully");
-      await queryClient.invalidateQueries({
-        queryKey: ["projects", projectId, "todos"],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["projects", projectId, "todos"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["projects", projectId, "sprints"],
+        }),
+      ]);
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to delete todo");
     },
   });
-  const moveMutation = useMutation({
+
+const moveMutation = useMutation({
     mutationFn: ({ todoId, data }: { todoId: string; data: MoveTodoRequest }) =>
       moveTodo(todoId, data),
+
+    // Optimistic Update مع الـ Rollback الحقيقي وتوافق تام مع الـ TypeScript
+    onMutate: async ({ todoId, data }) => {
+      await queryClient.cancelQueries({ queryKey });
+
+      const previousTodos = queryClient.getQueryData<Todo[]>(queryKey);
+
+      queryClient.setQueryData<Todo[]>(queryKey, (old = []) => {
+        return old.map((todo) => {
+          if (todo.id === todoId) {
+            return {
+              ...todo,
+              ...(data.sprintId !== undefined && { sprintId: data.sprintId }),
+              ...(data.status !== undefined && { status: data.status }),
+              // استخدام position بدلاً من order لأن هذا ما ترسله MoveTodoRequest
+              ...(data.position !== undefined && { order: data.position }),
+            };
+          }
+          return todo;
+        });
+      });
+
+      return { previousTodos };
+    },
+
+    onError: (err: Error, _variables, context) => {
+      if (context?.previousTodos) {
+        queryClient.setQueryData(queryKey, context.previousTodos);
+      }
+      toast.error(err.message || "Failed to move todo. Rolling back.");
+    },
+
     onSuccess: async () => {
       toast.success("Todo moved successfully");
-      // إبطال كاش المشروع بالكامل لضمان تحديث الباكلوغ والسبرنتات حالاً
-      await queryClient.invalidateQueries({
-        queryKey: ["projects", projectId],
-      });
-    },
-    onError: (err: Error) => {
-      toast.error(err.message || "Failed to move todo");
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["projects", projectId, "todos"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["projects", projectId, "sprints"],
+        }),
+      ]);
     },
   });
   return {

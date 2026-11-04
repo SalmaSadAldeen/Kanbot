@@ -1,9 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getProjectTodos } from "../api/todos";
-import { request } from "../api/client";
 import type { Sprint, Todo, TodoPriority, TodoType } from "../types/api";
-
+import { getProjectSprints } from "../api/sprints";
 export function useBacklogMaster(projectId: string | undefined) {
   const [search, setSearch] = useState<string>("");
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
@@ -25,22 +24,21 @@ export function useBacklogMaster(projectId: string | undefined) {
     queryFn: () =>
       projectId ? getProjectTodos(projectId) : Promise.resolve([]),
     enabled: Boolean(projectId),
-    staleTime: 1000 * 60 * 2,
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 
-  // 2. جلب سبرنتات المشروع مع كاش آمن
   const sprintsQuery = useQuery<Sprint[], Error>({
     queryKey: ["projects", projectId, "sprints"],
-    queryFn: async () => {
-      if (!projectId) return [];
-      const response = await request<{ sprints: Sprint[] }>(
-        "GET",
-        `/projects/${projectId}/sprints`,
-      );
-      return response.sprints;
+    queryFn: () => {
+      if (!projectId) return Promise.resolve([]);
+      return getProjectSprints(projectId);
     },
     enabled: Boolean(projectId),
     staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 
   const plannedSprints = useMemo(() => {
