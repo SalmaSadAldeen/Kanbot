@@ -14,6 +14,7 @@ import type {
   CompleteSprintRequest,
   Sprint,
 } from "../types/api";
+import toast from "react-hot-toast";
 
 export function useSprints(projectId: string | undefined) {
   const queryClient = useQueryClient();
@@ -42,12 +43,14 @@ export function useSprints(projectId: string | undefined) {
         newSprint,
       ]);
       await queryClient.invalidateQueries({ queryKey: sprintsQueryKey });
+      toast.success("Sprint saved successfully");
       if (variables.todoIds?.length) {
         await queryClient.invalidateQueries({
           queryKey: ["projects", projectId, "todos"],
         });
       }
     },
+    onError: (error: Error) => toast.error(error.message || "Failed to save sprint"),
   });
 
   const updateSprintMutation = useMutation({
@@ -63,7 +66,9 @@ export function useSprints(projectId: string | undefined) {
         old.map((s) => (s.id === updatedSprint.id ? updatedSprint : s)),
       );
       await queryClient.invalidateQueries({ queryKey: sprintsQueryKey });
+      toast.success("Sprint updated successfully");
     },
+    onError: (error: Error) => toast.error(error.message || "Failed to update sprint"),
   });
 
   const deleteSprintMutation = useMutation({
@@ -73,7 +78,13 @@ export function useSprints(projectId: string | undefined) {
         old.filter((s) => s.id !== deletedSprintId),
       );
       await queryClient.invalidateQueries({ queryKey: sprintsQueryKey });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["projects", projectId, "todos"] }),
+        queryClient.invalidateQueries({ queryKey: ["projects", projectId] }),
+      ]);
+      toast.success("Sprint deleted successfully");
     },
+    onError: (error: Error) => toast.error(error.message || "Failed to delete sprint"),
   });
 
   const startSprintMutation = useMutation({
@@ -93,7 +104,10 @@ export function useSprints(projectId: string | undefined) {
         queryKey: ["projects", projectId],
       });
       await queryClient.invalidateQueries({ queryKey: sprintsQueryKey });
+      await queryClient.invalidateQueries({ queryKey: ["sprints", startedSprint.id, "board"] });
+      toast.success("Sprint started successfully");
     },
+    onError: (error: Error) => toast.error(error.message || "Failed to start sprint"),
   });
 
   const completeSprintMutation = useMutation({
@@ -116,7 +130,9 @@ export function useSprints(projectId: string | undefined) {
         }),
         queryClient.invalidateQueries({ queryKey: sprintsQueryKey }),
       ]);
+      toast.success("Sprint completed successfully");
     },
+    onError: (error: Error) => toast.error(error.message || "Failed to complete sprint"),
   });
 
   const allSprints = sprintsQuery.data ?? [];

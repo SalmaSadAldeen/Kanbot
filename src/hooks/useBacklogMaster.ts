@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getProjectTodos } from "../api/todos";
 import type { Sprint, Todo, TodoPriority, TodoType } from "../types/api";
@@ -51,25 +51,25 @@ export function useBacklogMaster(projectId: string | undefined) {
     return all.filter((todo) => todo.sprintId === null);
   }, [todosQuery.data]);
 
-  const filterAndSortTodos = (todos: Todo[]) => {
+  const filterAndSortTodos = useCallback((todos: Todo[]) => {
     const sorted = [...todos].sort((a, b) => a.order - b.order);
     const query = debouncedSearch.trim().toLocaleLowerCase();
     return sorted.filter((todo) => {
       const matchesSearch =
         !query ||
-        `${todo.key} ${todo.title} ${todo.description ?? ""}`
+        `${todo.key} ${todo.title} ${todo.description ?? ""} ${todo.labels.join(" ")}`
           .toLocaleLowerCase()
           .includes(query);
       const matchesPriority = priority === "all" || todo.priority === priority;
       const matchesType = type === "all" || todo.type === type;
       return matchesSearch && matchesPriority && matchesType;
     });
-  };
+  }, [debouncedSearch, priority, type]);
 
   // المهام المعروضة في قسم الباكلوغ بعد الفلترة والبحث
   const backlogTodos = useMemo(() => {
     return filterAndSortTodos(pureBacklogTodos);
-  }, [pureBacklogTodos, debouncedSearch, priority, type]);
+  }, [pureBacklogTodos, filterAndSortTodos]);
 
   const toggleSection = (sectionId: string) => {
     setCollapsed((current) => {

@@ -9,10 +9,12 @@ interface AppState {
   theme: Theme;
   lang: Language;
   isCollapsed: boolean;
+  isMobileSidebarOpen: boolean;
   toggleTheme: () => void;
   setLanguage: (lang: Language) => void;
   toggleLanguage: () => void;
   toggleSidebar: () => void;
+  closeMobileSidebar: () => void;
 }
 
 const applyThemeAndLang = (theme: Theme, lang: Language) => {
@@ -33,6 +35,7 @@ export const useAppStore = create<AppState>()(
       theme: "light",
       lang: "en",
       isCollapsed: false,
+      isMobileSidebarOpen: false,
 
       toggleTheme: () => {
         const nextTheme = get().theme === "light" ? "dark" : "light";
@@ -52,8 +55,11 @@ export const useAppStore = create<AppState>()(
       },
 
       toggleSidebar: () => {
-        set({ isCollapsed: !get().isCollapsed });
+        if (typeof window !== "undefined" && window.innerWidth < 1024) {
+          set({ isMobileSidebarOpen: !get().isMobileSidebarOpen });
+        } else set({ isCollapsed: !get().isCollapsed });
       },
+      closeMobileSidebar: () => set({ isMobileSidebarOpen: false }),
     }),
     {
       name: "kanbot_settings",

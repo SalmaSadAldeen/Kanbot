@@ -44,6 +44,7 @@ function buildInvalidations(
       queryKey: ["projects", projectId],
     }),
   );
+  tasks.push(queryClient.invalidateQueries({ queryKey: ["sprints"] }));
 
   const uniqueSprints = new Set(
     (sprintIds ?? []).filter((id): id is string => typeof id === "string"),

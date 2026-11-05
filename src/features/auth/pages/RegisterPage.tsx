@@ -43,9 +43,15 @@ export function RegisterPage() {
       navigate("/projects", { replace: true });
     } catch (error) {
       if (error instanceof ApiError) {
+        if (error.status === 409) {
+          setError("email", {
+            type: "server",
+            message: "An account with this email already exists",
+          });
+        }
         for (const detail of error.details ?? []) {
           const path = detail.path as FieldPath<RegisterFormData>;
-          setError(path, { type: "server", message: detail.message });
+          if (path in data) setError(path, { type: "server", message: detail.message });
         }
         setApiMessage(error.message);
       } else {
@@ -71,7 +77,7 @@ export function RegisterPage() {
           label="Email address"
           type="email"
           icon={Mail}
-          autoComplete="off"
+          autoComplete="email"
           registration={register("email")}
           error={errors.email?.message}
         />

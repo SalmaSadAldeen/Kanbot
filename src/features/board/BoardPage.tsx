@@ -17,7 +17,6 @@ import { useProject } from "../../hooks/useProjects";
 import { useBoard } from "../../hooks/useBoard";
 import { useSprints } from "../../hooks/useSprints";
 import { EmptyState } from "../../components/ui/EmptyState";
-import { Spinner } from "../../components/ui/Spinner";
 import { Button } from "../../components/ui/Button";
 import { SprintHeader } from "./components/SprintHeader";
 import { BoardColumn } from "./components/BoardColumn";
@@ -69,6 +68,7 @@ export function BoardPage() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [activeDragTodo, setActiveDragTodo] = useState<Todo | null>(null);
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
+  const [dragAnnouncement, setDragAnnouncement] = useState("");
 
   const openDetail = useCallback((todo: Todo) => {
     setSelectedTodo(todo);
@@ -92,6 +92,7 @@ export function BoardPage() {
   function handleDragStart(event: DragStartEvent) {
     const todo = (event.active.data.current as { todo?: Todo })?.todo;
     setActiveDragTodo(todo ?? null);
+    if (todo) setDragAnnouncement(`${todo.key} picked up`);
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -106,26 +107,16 @@ export function BoardPage() {
     const targetStatus = toStatus(overId);
 
     if (targetStatus) {
-      if (
-        draggedTodo.status === targetStatus &&
-        columns[targetStatus].length === 0
-      )
-        return;
-
       const targetCol = columns[targetStatus];
-      const position = targetCol.length;
+      const position = targetCol.length - (draggedTodo.status === targetStatus ? 1 : 0);
+      if (draggedTodo.status === targetStatus && draggedTodo.order === position) return;
 
-      if (
-        draggedTodo.status === targetStatus &&
-        draggedTodo.order === position - 1
-      )
-        return;
-
-      moveCard(draggedTodo.id, {
+      void moveCard(draggedTodo.id, {
         status: targetStatus,
         position,
         sprintId: draggedTodo.sprintId ?? undefined,
       });
+      setDragAnnouncement(`${draggedTodo.key} moved to ${board.columns[targetStatus]}`);
       return;
     }
 
@@ -160,11 +151,12 @@ export function BoardPage() {
     )
       return;
 
-    moveCard(draggedTodo.id, {
+    void moveCard(draggedTodo.id, {
       status: targetColStatus,
       position,
       sprintId: draggedTodo.sprintId ?? undefined,
     });
+    setDragAnnouncement(`${draggedTodo.key} moved to ${board.columns[targetColStatus]}`);
   }
 
   // 7. Complete sprint confirmation handler
@@ -192,8 +184,8 @@ export function BoardPage() {
 
   if (projectQuery.isLoading || (activeSprintId && isLoading)) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Spinner size="lg" />
+      <div className="grid min-h-[60vh] grid-cols-4 gap-4 overflow-hidden" aria-label={board.loading}>
+        {TODO_STATUSES.map((status) => <section key={status} className="min-w-[220px] animate-pulse rounded-xl bg-slate-100 p-3 dark:bg-slate-900"><div className="mb-4 h-6 w-2/3 rounded bg-slate-200 dark:bg-slate-800" />{[0,1,2].map((n)=><div key={n} className="mb-3 h-24 rounded-lg bg-slate-200 dark:bg-slate-800" />)}</section>)}
       </div>
     );
   }
@@ -237,9 +229,7 @@ export function BoardPage() {
 
   if (!sprint || !columns) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Spinner size="lg" />
-      </div>
+      <div role="status" className="p-8 text-center text-sm text-slate-500">{board.loading}</div>
     );
   }
 
@@ -265,6 +255,7 @@ export function BoardPage() {
 
       {/* ── Columns area ─────────────────────────────────────────────────── */}
       <div className="min-h-0 flex-1 overflow-x-auto pb-4">
+        <div className="sr-only" aria-live="assertive" aria-atomic="true">{dragAnnouncement}</div>
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
@@ -307,7 +298,7 @@ export function BoardPage() {
           projectId={projectId}
           isOpen={isDetailOpen}
           onClose={closeDetail}
-          sprints={sprint ? [sprint] : []}
+          sprints={allSprints}
         />
       )}
 

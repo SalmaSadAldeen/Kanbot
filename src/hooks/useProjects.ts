@@ -78,46 +78,23 @@ export function useProjects() {
   // 5. عملية الحذف الأساسية (DELETE API)
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteProjectApi(id),
-    onError: (err: unknown) => {
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: projectsKeys.all });
+      const previousProjects = queryClient.getQueryData<ProjectWithStats[]>(projectsKeys.all);
+      queryClient.setQueryData<ProjectWithStats[]>(projectsKeys.all, (old = []) => old.filter((project) => project.id !== id));
+      return { previousProjects };
+    },
+    onSuccess: (_data, id) => {
+      queryClient.removeQueries({ queryKey: projectsKeys.detail(id) });
+      toast.success("Project deleted successfully");
+    },
+    onError: (err: unknown, _id, context) => {
+      if (context?.previousProjects) queryClient.setQueryData(projectsKeys.all, context.previousProjects);
       const message =
         err instanceof ApiError ? err.message : "Failed to delete project";
       toast.error(message);
-      void queryClient.invalidateQueries({ queryKey: projectsKeys.all });
     },
   });
-
-  // 6. دالة الحذف الذكية مع إخفاء فوري وتأخير (Optimistic Update)
-  const deleteProjectWithUndo = (id: string) => {
-    const previousProjects = queryClient.getQueryData<ProjectWithStats[]>(
-      projectsKeys.all,
-    );
-    const targetProject = previousProjects?.find((p) => p.id === id);
-
-    if (!targetProject) return;
-
-    // إخفاء المشروع محلياً من الواجهة فوراً ليراها المستخدم وكأنها حُذفت
-    queryClient.setQueryData<ProjectWithStats[]>(projectsKeys.all, (old = []) =>
-      old.filter((p) => p.id !== id),
-    );
-
-    // مهلة 4 ثوانٍ قبل إرسال الطلب الفعلي للسيرفر (تسمح للمستخدم بإدراك ما حدث أو التراجع)
-    const timeoutId = setTimeout(() => {
-      deleteMutation.mutate(id, {
-        onError: () => {
-          // في حال فشل السيرفر، نعيد المشروع القديم للكاش تلقائياً (Rollback)
-          if (previousProjects) {
-            queryClient.setQueryData(projectsKeys.all, previousProjects);
-          }
-        },
-      });
-    }, 4000);
-
-    toast.success(`Project "${targetProject.name}" deleted.`, {
-      duration: 4000,
-    });
-
-    return timeoutId;
-  };
 
   return {
     ...projectsQuery, // تنشر خصائص الـ query مثل isLoading, error, refetch
@@ -126,7 +103,7 @@ export function useProjects() {
     isCreating: createMutation.isPending,
     updateProject: updateMutation.mutateAsync,
     isUpdating: updateMutation.isPending,
-    deleteProject: deleteProjectWithUndo,
+    deleteProject: deleteMutation.mutateAsync,
     isDeleting: deleteMutation.isPending,
   };
 }

@@ -1,22 +1,26 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
 import { Check, ChevronDown, FolderKanban, Search } from "lucide-react";
 import { useProjects } from "../../../hooks/useProjects";
-import { useTranslation, useAppStore } from "../../../store/useAppStore"; // أضفنا useAppStore لمعرفة حالة الطي
+import { useTranslation, useAppStore } from "../../../store/useAppStore";
 
 export function ProjectSwitcher() {
   const { isRtl } = useTranslation();
-  const isCollapsed = useAppStore((state) => state.isCollapsed); // جلب حالة طي السايد بار
+  const isCollapsed = useAppStore((state) => state.isCollapsed);
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
-  const { projects, isLoading } = useProjects();
+  const location = useLocation();
+  const { projects, isLoading, isError, error, refetch } = useProjects();
+  const closeMobileSidebar = useAppStore((state) => state.closeMobileSidebar);
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
+  // مطابقة المشروع الحالي بدقة مع الـ useParams
   const selectedProject =
-    projects.find((project) => project.id === projectId) || projects[0];
+    projects.find((project) => project.id === projectId) || null;
+
   const filteredProjects = projects.filter((project) =>
     `${project.name} ${project.key}`
       .toLowerCase()
@@ -39,7 +43,16 @@ export function ProjectSwitcher() {
   const chooseProject = (id: string) => {
     setIsOpen(false);
     setSearch("");
-    navigate(`/projects/${id}`);
+    const pathSegments = location.pathname.split("/").filter(Boolean);
+    // إذا كنا داخل مسار مشروع سابق، نقوم بتحديث الـ id، وإلا نوجه للباكلوع افتراضياً
+    const currentSection = ["backlog", "board", "sprints"].includes(
+      pathSegments[2] ?? "",
+    )
+      ? pathSegments[2]
+      : "backlog";
+
+    navigate(`/projects/${id}/${currentSection}`);
+    closeMobileSidebar();
   };
 
   return (
@@ -47,7 +60,12 @@ export function ProjectSwitcher() {
       <button
         type="button"
         onClick={() => setIsOpen((open) => !open)}
-        title={isCollapsed ? (selectedProject?.name || "Project") : undefined}
+        title={
+          isCollapsed
+            ? selectedProject?.name ||
+              (isRtl ? "اختر مشروعاً" : "Choose a project")
+            : undefined
+        }
         className={`flex h-10 w-full items-center rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 ${
           isCollapsed ? "justify-center px-0" : "justify-between px-3 gap-2"
         }`}
@@ -56,7 +74,6 @@ export function ProjectSwitcher() {
           <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300">
             <FolderKanban size={13} />
           </span>
-          {/* يختفي الاسم تماماً عندما يكون السايد بار مطوياً لكي لا يحدث أي تداخل أو طعج */}
           {!isCollapsed && (
             <span className="truncate text-xs font-bold text-slate-800 dark:text-slate-100">
               {selectedProject
@@ -67,7 +84,6 @@ export function ProjectSwitcher() {
             </span>
           )}
         </div>
-        {/* يختفي السهم أيضاً عندما يكون السايد بار مطوياً */}
         {!isCollapsed && (
           <ChevronDown
             size={14}
@@ -95,7 +111,29 @@ export function ProjectSwitcher() {
           <div className="max-h-48 overflow-y-auto space-y-1">
             {isLoading ? (
               <p className="p-3 text-center text-xs text-slate-400">
-                Loading...
+                {isRtl ? "جاري التحميل..." : "Loading..."}
+              </p>
+            ) : isError ? (
+              <div
+                className="p-2 text-center text-xs text-rose-600 dark:text-rose-400"
+                role="alert"
+              >
+                {error instanceof Error
+                  ? error.message
+                  : isRtl
+                    ? "تعذر تحميل المشاريع"
+                    : "Unable to load projects"}
+                <button
+                  type="button"
+                  onClick={() => void refetch()}
+                  className="ms-2 underline"
+                >
+                  {isRtl ? "إعادة المحاولة" : "Retry"}
+                </button>
+              </div>
+            ) : filteredProjects.length === 0 ? (
+              <p className="p-3 text-center text-xs text-slate-500">
+                {isRtl ? "لم يتم العثور على مشاريع" : "No projects found"}
               </p>
             ) : (
               filteredProjects.map((project) => (

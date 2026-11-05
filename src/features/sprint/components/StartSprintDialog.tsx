@@ -24,7 +24,10 @@ export function StartSprintDialog({
   const copy = t.projectsPage.backlogPage.startSprintDialog;
 
   // حساب تاريخ اليوم وتاريخ بعد 14 يوماً افتراضياً
-  const getFormattedDate = (date: Date) => date.toISOString().split("T")[0];
+  const getFormattedDate = (date: Date) => {
+    const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+    return local.toISOString().slice(0, 10);
+  };
 
   const today = new Date();
   const defaultEndDate = new Date();
@@ -32,10 +35,13 @@ export function StartSprintDialog({
 
   const [startDate, setStartDate] = useState(getFormattedDate(today));
   const [endDate, setEndDate] = useState(getFormattedDate(defaultEndDate));
+  const [dateError, setDateError] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (hasActiveSprint) return;
+    if (endDate < startDate) { setDateError(true); return; }
+    setDateError(false);
     await onSubmit({
       startDate: startDate ,
       endDate: endDate ,
@@ -63,28 +69,31 @@ export function StartSprintDialog({
         {/* تواريخ البداية والنهاية */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-300">
+            <label htmlFor="start-sprint-date" className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-300">
               {copy.startDateLabel}
             </label>
             <input
               type="date"
+              id="start-sprint-date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-indigo-500 focus:bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-300">
+            <label htmlFor="end-sprint-date" className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-300">
               {copy.endDateLabel}
             </label>
             <input
               type="date"
+              id="end-sprint-date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-indigo-500 focus:bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
             />
           </div>
         </div>
+        {dateError && <p role="alert" className="text-xs text-rose-600">{copy.endDateError}</p>}
 
         {/* الأزرار */}
         <div className="flex justify-end gap-2.5 border-t border-slate-100 pt-4 dark:border-slate-800/80">

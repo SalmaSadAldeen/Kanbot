@@ -1,18 +1,14 @@
 import { useMemo } from "react";
 import { NavLink, useParams } from "react-router";
-import {
-  ListTodo,
-  PlayCircle,
-  Zap,
-  FolderKanban,
-} from "lucide-react";
+import { ListTodo, PlayCircle, Zap, FolderKanban } from "lucide-react";
 import { useTranslation, useAppStore } from "../../store/useAppStore";
 import { ProjectSwitcher } from "../../features/projects/components/ProjectSwitcher";
 import { useAuth } from "../../features/auth/AuthProvider";
 
 export function Sidebar() {
-  const { t } = useTranslation();
+  const { t, isRtl } = useTranslation();
   const isCollapsed = useAppStore((state) => state.isCollapsed);
+  const closeMobileSidebar = useAppStore((state) => state.closeMobileSidebar);
   const { user } = useAuth();
 
   const userName = user?.name ?? "User";
@@ -30,10 +26,12 @@ export function Sidebar() {
 
   const { projectId } = useParams<{ projectId: string }>();
 
-  // التحقق من أن معرف المشروع حقيقي وليس فارغاً أو كلمة وهمية
-  const isValidProject = projectId && projectId !== "select";
+  // التحقق الأدق من معرف المشروع
+  const isValidProject = Boolean(
+    projectId && projectId !== "select" && projectId !== "projects",
+  );
 
-  // تعريف الروابط باستخدام useMemo ومنع تكرار المسارات أو المفاتيح
+  // تعريف الروابط مع ضمان صحة المسارات ديناميكياً
   const projectNavigation = useMemo(() => {
     return [
       {
@@ -69,9 +67,11 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`flex h-full flex-col border-e border-slate-200 bg-slate-50/80 transition-[width] duration-300 ease-in-out dark:border-slate-800 dark:bg-slate-900/95 ${
-        isCollapsed ? "lg:w-16 w-64" : "w-64"
-      }`}
+      id="app-sidebar"
+      dir={isRtl ? "rtl" : "ltr"}
+      className={`flex h-full flex-col border-slate-200 bg-slate-50/80 transition-[width] duration-200 ease-in-out dark:border-slate-800 dark:bg-slate-900/95 ${
+        isRtl ? "border-s lg:border-e-0 lg:border-s" : "border-e"
+      } ${isCollapsed ? "lg:w-16 w-64" : "w-64"}`}
     >
       <div
         className={`p-3 ${isCollapsed ? "pointer-events-none opacity-60" : ""}`}
@@ -93,14 +93,15 @@ export function Sidebar() {
             key={id}
             to={href}
             end={exact}
+            onClick={closeMobileSidebar}
             title={isCollapsed ? name : undefined}
             aria-label={isCollapsed ? name : undefined}
             className={({ isActive }) =>
               [
-                "group relative flex h-10 items-center rounded-xl text-sm font-semibold transition-colors duration-150",
+                "group relative flex min-h-10 items-center rounded-xl text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500",
                 isCollapsed ? "justify-center px-0 lg:px-0" : "gap-3 px-3",
-                isActive
-                  ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300"
+                isActive && isValidProject
+                  ? "bg-indigo-50 text-indigo-700 before:absolute before:inset-y-2 before:start-0 before:w-1 before:rounded-e before:bg-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300 dark:before:bg-indigo-400"
                   : "text-slate-600 hover:bg-slate-200/60 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/70 dark:hover:text-slate-100",
               ].join(" ")
             }
@@ -110,7 +111,7 @@ export function Sidebar() {
                 <Icon
                   size={18}
                   className={`shrink-0 transition-colors ${
-                    isActive
+                    isActive && isValidProject
                       ? "text-indigo-600 dark:text-indigo-400"
                       : "text-slate-400 group-hover:text-slate-700 dark:text-slate-500 dark:group-hover:text-slate-300"
                   }`}
@@ -122,7 +123,7 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Footer: User profile info static display only */}
+      {/* Footer: User profile info */}
       <div className="border-t border-slate-200 p-2.5 dark:border-slate-800">
         <div
           className={`flex items-center rounded-xl p-2 ${

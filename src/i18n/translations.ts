@@ -168,6 +168,7 @@ export const translations = {
             "There is already an active sprint. You cannot start a new sprint until the active one is completed.",
           startDateLabel: "Start Date",
           endDateLabel: "End Date",
+          endDateError: "End date must be on or after the start date.",
           startBtn: "Start",
         },
       },
@@ -199,6 +200,7 @@ export const translations = {
         completedAt: "Completed at",
       },
       boardPage: {
+        loading: "Loading board…",
         noActiveSprint: "No active sprint",
         noActiveSprintDesc:
           "There is no active sprint for this project. Head to the Backlog to plan and start one.",
@@ -423,6 +425,7 @@ export const translations = {
             "يوجد سبرنت نشط بالفعل. لا يمكنك بدء سبرنت جديد حتى يتم إكمال السبرنت النشط.",
           startDateLabel: "تاريخ البدء",
           endDateLabel: "تاريخ الانتهاء",
+          endDateError: "يجب أن يكون تاريخ الانتهاء في يوم البدء أو بعده.",
           startBtn: "بدء",
         },
       },
@@ -454,6 +457,7 @@ export const translations = {
         completedAt: "تاريخ الإنجاز",
       },
       boardPage: {
+        loading: "جارٍ تحميل اللوحة…",
         noActiveSprint: "لا يوجد سبرنت نشط",
         noActiveSprintDesc:
           "لا يوجد سبرنت نشط لهذا المشروع. اذهب إلى الباكلوج لتخطيط وبدء سبرنت.",

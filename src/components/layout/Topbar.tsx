@@ -15,7 +15,7 @@ import { Dialog } from "../ui/Dialog";
 export function Topbar() {
   const { user, logout } = useAuth();
   const { t, lang } = useTranslation();
-  const { theme, isCollapsed, toggleTheme, toggleLanguage, toggleSidebar } =
+  const { theme, isCollapsed, isMobileSidebarOpen, toggleTheme, toggleLanguage, toggleSidebar } =
     useAppStore();
 
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
@@ -32,7 +32,8 @@ export function Topbar() {
             onClick={toggleSidebar}
             aria-label={t.topbar.toggleSidebar}
             title={t.topbar.toggleSidebar}
-            aria-expanded={!isCollapsed}
+            aria-expanded={window.innerWidth < 1024 ? isMobileSidebarOpen : !isCollapsed}
+            aria-controls="app-sidebar"
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 cursor-pointer"
           >
             {/* استخدام أيقونة واحدة مع تطبيق الدوران 180 درجة وانعكاس الاتجاه حسب اللغة */}
@@ -64,7 +65,7 @@ export function Topbar() {
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-1.5">
+        <nav aria-label="Top bar controls" className="flex items-center gap-1.5">
           {/* Language toggle */}
           <button
             type="button"
@@ -120,7 +121,7 @@ export function Topbar() {
               <LogOut size={16} />
             </span>
           </button>
-        </div>
+        </nav>
       </header>
 
       <Dialog

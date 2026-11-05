@@ -1,24 +1,32 @@
 import { useEffect } from "react";
-import { Outlet } from "react-router";
+import { Outlet, useLocation } from "react-router";
 import { Sidebar } from "../layout/Sidebar";
 import { Topbar } from "../layout/Topbar";
 import { ToastProvider } from "../ui/ToastProvider";
 import { useAppStore } from "../../store/useAppStore";
 
 export function AppShell() {
-  const { isCollapsed, toggleSidebar } = useAppStore();
+  const { isMobileSidebarOpen, closeMobileSidebar } = useAppStore();
+  const location = useLocation();
+
+  useEffect(() => { closeMobileSidebar(); }, [location.pathname, closeMobileSidebar]);
 
   // Close the mobile overlay sidebar on Escape key
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !isCollapsed) {
+      if (e.key === "Escape" && isMobileSidebarOpen) {
         // Only close if we're on a mobile viewport
-        if (window.innerWidth < 1024) toggleSidebar();
+        if (window.innerWidth < 1024) closeMobileSidebar();
       }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [isCollapsed, toggleSidebar]);
+  }, [isMobileSidebarOpen, closeMobileSidebar]);
+
+  useEffect(() => {
+    document.body.style.overflow = isMobileSidebarOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [isMobileSidebarOpen]);
 
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-50 transition-colors duration-300">
@@ -35,10 +43,10 @@ export function AppShell() {
           Only rendered on small screens (<lg) when sidebar is open.
           Clicking it closes the sidebar.
         */}
-        {!isCollapsed && (
+        {isMobileSidebarOpen && (
           <div
             aria-hidden="true"
-            onClick={toggleSidebar}
+            onClick={closeMobileSidebar}
             className="fixed inset-0 top-16 z-20 bg-slate-900/50 backdrop-blur-sm lg:hidden"
           />
         )}
@@ -57,11 +65,11 @@ export function AppShell() {
             // Desktop: static flex child
             "lg:relative lg:z-auto lg:translate-x-0 lg:shrink-0",
             // Mobile: absolute overlay
-            "absolute inset-y-0 left-0 z-30",
+            "absolute inset-y-0 start-0 z-30",
             // Smooth slide
             "transition-transform duration-300 ease-in-out",
             // Mobile visibility: hidden when isCollapsed, visible when open
-            isCollapsed ? "-translate-x-full lg:translate-x-0" : "translate-x-0",
+            isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full rtl:translate-x-full lg:translate-x-0",
           ].join(" ")}
         >
           <Sidebar />

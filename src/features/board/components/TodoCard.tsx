@@ -19,7 +19,6 @@ interface TodoCardProps {
   isMoving?: boolean;
 }
 
-// ── Type badge — inline, no external component needed for the card ──────────
 const TYPE_CONFIG: Record<
   TodoType,
   { icon: React.ElementType; bg: string; text: string; label: string }
@@ -44,7 +43,6 @@ const TYPE_CONFIG: Record<
   },
 };
 
-// ── Priority icon — compact, icon-only, colour-coded ────────────────────────
 const PRIORITY_CONFIG: Record<
   TodoPriority,
   { icon: React.ElementType; color: string; label: string }
@@ -71,14 +69,11 @@ const PRIORITY_CONFIG: Record<
   },
 };
 
-// ── Fallback for unknown values coming from the API ──────────────────────────
 function TypeBadge({ type }: { type: TodoType }) {
   const { t } = useTranslation();
   const cfg = TYPE_CONFIG[type] ?? TYPE_CONFIG.task;
   const Icon = cfg.icon;
-  // Use translated label if available, fallback to config label
-  const label =
-    t.projectsPage.backlogPage.typeLabels?.[type] ?? cfg.label;
+  const label = t.projectsPage.backlogPage.typeLabels?.[type] ?? cfg.label;
   return (
     <span
       className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold ${cfg.bg} ${cfg.text}`}
@@ -103,7 +98,6 @@ function PriorityIcon({ priority }: { priority: TodoPriority }) {
   );
 }
 
-// ── Card ─────────────────────────────────────────────────────────────────────
 export function TodoCard({ todo, onOpen, isMoving = false }: TodoCardProps) {
   const { t } = useTranslation();
   const pts = t.projectsPage.boardPage.pts;
@@ -127,11 +121,9 @@ export function TodoCard({ todo, onOpen, isMoving = false }: TodoCardProps) {
       ref={setNodeRef}
       style={style}
       className={[
-        // Base
         "group relative flex flex-col gap-0 rounded-xl border bg-white",
         "select-none transition-all duration-150",
         "dark:bg-slate-800",
-        // Dragging state
         isDragging
           ? "z-50 scale-[1.02] border-indigo-400 shadow-2xl shadow-indigo-500/30 opacity-95 dark:border-indigo-500"
           : [
@@ -145,7 +137,7 @@ export function TodoCard({ todo, onOpen, isMoving = false }: TodoCardProps) {
         .filter(Boolean)
         .join(" ")}
     >
-      {/* ── Left accent stripe — colour-coded by type ── */}
+      {/* Left accent stripe */}
       <div
         className={[
           "absolute inset-y-0 left-0 w-[3px] rounded-l-xl",
@@ -157,30 +149,30 @@ export function TodoCard({ todo, onOpen, isMoving = false }: TodoCardProps) {
         ].join(" ")}
       />
 
-      {/* ── Card body ── */}
       <div className="pl-3.5 pr-3 pt-3 pb-2.5 flex flex-col gap-2.5">
-
         {/* Row 1: key + type badge + drag handle */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            {/* Task key */}
             <span className="font-mono text-[10px] font-semibold text-slate-400 dark:text-slate-500 shrink-0">
               {todo.key}
             </span>
-            {/* Type badge */}
             <TypeBadge type={todo.type} />
           </div>
 
-          {/* Drag handle — hidden until hover for a cleaner default look */}
+          {/* Drag handle — مستقل تماماً للسحب فقط */}
           <button
             type="button"
             {...attributes}
             {...listeners}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
             aria-label="Drag card"
             className={[
               "flex h-6 w-5 shrink-0 cursor-grab items-center justify-center rounded",
               "text-slate-300 opacity-0 transition-all",
-              "group-hover:opacity-100 hover:text-slate-500",
+              "group-hover:opacity-100 hover:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700",
               "focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500",
               "active:cursor-grabbing",
               "dark:text-slate-600 dark:hover:text-slate-400",
@@ -190,10 +182,13 @@ export function TodoCard({ todo, onOpen, isMoving = false }: TodoCardProps) {
           </button>
         </div>
 
-        {/* Row 2: Title — the click target ── */}
+        {/* Row 2: Title — النقر هنا حصراً يفتح نافذة التعديل بشكل فوري ونظيف */}
         <button
           type="button"
-          onClick={() => onOpen(todo)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpen(todo);
+          }}
           className={[
             "w-full text-start text-[13px] font-semibold leading-snug",
             "line-clamp-2 break-words",
@@ -205,7 +200,7 @@ export function TodoCard({ todo, onOpen, isMoving = false }: TodoCardProps) {
           {todo.title}
         </button>
 
-        {/* Row 3: priority icon + points ── */}
+        {/* Row 3: priority icon + points */}
         <div className="flex items-center justify-between gap-2 border-t border-slate-100 pt-2 dark:border-slate-700/60">
           <PriorityIcon priority={todo.priority} />
 

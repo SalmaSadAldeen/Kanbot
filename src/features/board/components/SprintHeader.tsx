@@ -1,4 +1,4 @@
-import { differenceInCalendarDays, parseISO, format } from "date-fns";
+import { differenceInCalendarDays, parseISO } from "date-fns";
 import {
   CalendarRange,
   Target,
@@ -12,6 +12,9 @@ import { Button } from "../../../components/ui/Button";
 import type { Sprint } from "../../../types/api";
 import { useTranslation } from "../../../store/useAppStore";
 
+const ICON_SIZE = 14;
+const ICON_STROKE = 2;
+
 interface SprintHeaderProps {
   sprint: Sprint;
   onCompleteSprint: () => void;
@@ -21,10 +24,10 @@ interface SprintHeaderProps {
 }
 
 /** "Nov 3, 2026" */
-function formatDate(dateStr: string | null): string {
+function formatDate(dateStr: string | null, locale: string): string {
   if (!dateStr) return "—";
   try {
-    return format(parseISO(dateStr), "MMM d, yyyy");
+    return new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).format(parseISO(dateStr));
   } catch {
     return dateStr;
   }
@@ -48,10 +51,10 @@ interface ProgressBarProps {
 function ProgressBar({ value, colorClass, trackClass }: ProgressBarProps) {
   const pct = Math.min(100, Math.max(0, value));
   return (
-    <div className={`relative h-1.5 w-full overflow-hidden rounded-full ${trackClass}`}>
+      <div className={`relative h-1.5 w-full overflow-hidden rounded-full ${trackClass}`} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}>
       <div
         className={`absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out ${colorClass}`}
-        style={{ width: `${pct}%` }}
+        style={{ width: `${pct}%`, insetInlineStart: 0 }}
       />
     </div>
   );
@@ -97,7 +100,7 @@ export function SprintHeader({
   onAskAi,
   isCompleting = false,
 }: SprintHeaderProps) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const bd = t.projectsPage.boardPage;
 
   const stats = sprint.stats;
@@ -170,9 +173,9 @@ export function SprintHeader({
             </div>
 
             <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-              <CalendarRange size={13} className="shrink-0 text-slate-400" />
+            <CalendarRange size={ICON_SIZE} strokeWidth={ICON_STROKE} aria-hidden="true" className="shrink-0 text-slate-400" />
               <span>
-                {formatDate(sprint.startDate)}&nbsp;&mdash;&nbsp;{formatDate(sprint.endDate)}
+                {formatDate(sprint.startDate, lang)}&nbsp;&mdash;&nbsp;{formatDate(sprint.endDate, lang)}
               </span>
             </div>
 

@@ -30,6 +30,7 @@ export function useBoard(sprintId: string | undefined) {
 
   // ── Board-level move with optimistic update ────────────────────────────────
   const moveMutation = useMutation({
+    scope: { id: `board-move-${sprintId ?? "none"}` },
     mutationFn: ({ todoId, data }: { todoId: string; data: MoveTodoRequest }) =>
       moveTodo(todoId, data),
 
@@ -85,7 +86,7 @@ export function useBoard(sprintId: string | undefined) {
       if (context?.previous) {
         queryClient.setQueryData(queryKey, context.previous);
       }
-      toast.error("Failed to move card. Changes rolled back.");
+      toast.error(_err instanceof Error ? _err.message : "Failed to move card. Changes rolled back.");
     },
 
     onSuccess: async () => {

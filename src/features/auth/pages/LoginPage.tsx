@@ -40,7 +40,8 @@ export function LoginPage() {
       const response = await loginRequest(credentials);
       login(response.token, response.user);
       const redirect = params.get("redirect");
-      navigate(redirect?.startsWith("/") ? redirect : "/projects", {
+      const safeRedirect = redirect?.startsWith("/") && !redirect.startsWith("//") && !redirect.includes("\\") ? redirect : "/projects";
+      navigate(safeRedirect, {
         replace: true,
       });
     } catch (error) {
@@ -61,7 +62,7 @@ export function LoginPage() {
           label="Email address"
           type="email"
           icon={Mail}
-          autoComplete="off"
+          autoComplete="email"
           registration={register("email")}
           error={errors.email?.message}
         />
@@ -70,7 +71,7 @@ export function LoginPage() {
           label="Password"
           type="password"
           icon={LockKeyhole}
-          autoComplete="new-password"
+          autoComplete="current-password"
           registration={register("password")}
           error={errors.password?.message}
         />
