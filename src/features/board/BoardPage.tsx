@@ -15,6 +15,7 @@ import { Kanban, ListTodo } from "lucide-react";
 
 import { useProject } from "../../hooks/useProjects";
 import { useBoard } from "../../hooks/useBoard";
+import { useSprints } from "../../hooks/useSprints";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { Spinner } from "../../components/ui/Spinner";
 import { Button } from "../../components/ui/Button";
@@ -22,18 +23,14 @@ import { SprintHeader } from "./components/SprintHeader";
 import { BoardColumn } from "./components/BoardColumn";
 import { TodoCard } from "./components/TodoCard";
 import { TodoDetailsDialog } from "../todos/TodoDetailsDialog";
-import type { Todo, TodoStatus } from "../../types/api";
+import { CompleteSprintDialog } from "../sprint/components/CompleteSprintDialog";
+import type { Todo, TodoStatus, CompleteSprintRequest } from "../../types/api";
 import { TODO_STATUSES } from "../../types/api";
 import { useTranslation } from "../../store/useAppStore";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Helpers
+// Helper
 // ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Given the droppable id (which equals a TodoStatus string like "in_progress"),
- * returns the target status — or null if the id doesn't map to a known status.
- */
 function toStatus(droppableId: string): TodoStatus | null {
   return (TODO_STATUSES as readonly string[]).includes(droppableId)
     ? (droppableId as TodoStatus)
@@ -48,18 +45,30 @@ export function BoardPage() {
   const { t } = useTranslation();
   const board = t.projectsPage.boardPage;
 
-  // ── 1. Resolve active sprint from project stats ────────────────────────────
+  // 1. Resolve active sprint id from project stats
   const projectQuery = useProject(projectId ?? "");
-  const activeSprint = projectQuery.data?.stats.activeSprint ?? null;
+  const activeSprintId = projectQuery.data?.stats.activeSprint?.id;
 
-  // ── 2. Fetch the board layout ──────────────────────────────────────────────
-  const { sprint, columns, isLoading, isError, error, refetch, moveCard, isMoving } =
-    useBoard(activeSprint?.id);
+  // 2. Fetch sprints data and mutations (completeSprint, etc.)
+  const { allSprints, completeSprint } = useSprints(projectId);
 
-  // ── 3. Local UI state ──────────────────────────────────────────────────────
+  // 3. Fetch the board layout for the active sprint
+  const {
+    sprint,
+    columns,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    moveCard,
+    isMoving,
+  } = useBoard(activeSprintId);
+
+  // 4. Local UI state
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [activeDragTodo, setActiveDragTodo] = useState<Todo | null>(null);
+  const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
 
   const openDetail = useCallback((todo: Todo) => {
     setSelectedTodo(todo);
@@ -71,20 +80,15 @@ export function BoardPage() {
     setSelectedTodo(null);
   }, []);
 
-  // ── 4. dnd-kit sensors ────────────────────────────────────────────────────
+  // 5. dnd-kit sensors
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        // Require a 5px movement before starting drag (prevents mis-clicks)
-        distance: 5,
-      },
-    }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
 
-  // ── 5. Drag handlers ──────────────────────────────────────────────────────
+  // 6. Drag handlers
   function handleDragStart(event: DragStartEvent) {
     const todo = (event.active.data.current as { todo?: Todo })?.todo;
     setActiveDragTodo(todo ?? null);
@@ -92,47 +96,39 @@ export function BoardPage() {
 
   function handleDragEnd(event: DragEndEvent) {
     setActiveDragTodo(null);
-
     const { active, over } = event;
     if (!over || !columns) return;
 
     const draggedTodo = (active.data.current as { todo?: Todo })?.todo;
     if (!draggedTodo) return;
 
-    // The "over" id is either a column id (TodoStatus) or another card's id
     const overId = String(over.id);
     const targetStatus = toStatus(overId);
 
     if (targetStatus) {
-      // ── Dropped directly onto a column (empty or its header) ──────────────
       if (
         draggedTodo.status === targetStatus &&
         columns[targetStatus].length === 0
-      ) {
-        return; // no-op: already in this empty column
-      }
+      )
+        return;
 
       const targetCol = columns[targetStatus];
-      const position = targetCol.length; // append to end
+      const position = targetCol.length;
 
       if (
         draggedTodo.status === targetStatus &&
         draggedTodo.order === position - 1
-      ) {
-        return; // already last in its column
-      }
+      )
+        return;
 
       moveCard(draggedTodo.id, {
         status: targetStatus,
         position,
-        // Stay in the same sprint
         sprintId: draggedTodo.sprintId ?? undefined,
       });
       return;
     }
 
-    // ── Dropped onto another card ─────────────────────────────────────────
-    // Determine which column the target card is in
     let targetCol: Todo[] | null = null;
     let targetColStatus: TodoStatus | null = null;
     let targetIndex = -1;
@@ -150,24 +146,19 @@ export function BoardPage() {
 
     if (!targetCol || targetColStatus === null) return;
 
-    // Build the new position: if moving within the same column, account for
-    // the card being removed from its original slot first.
     let position = targetIndex;
     if (
       draggedTodo.status === targetColStatus &&
       draggedTodo.order < targetIndex
     ) {
-      // Card was above the target; after removal the target shifts up by 1
       position = targetIndex - 1;
     }
 
     if (
       draggedTodo.id === overId ||
-      (draggedTodo.status === targetColStatus &&
-        draggedTodo.order === position)
-    ) {
-      return; // no-op: same position
-    }
+      (draggedTodo.status === targetColStatus && draggedTodo.order === position)
+    )
+      return;
 
     moveCard(draggedTodo.id, {
       status: targetColStatus,
@@ -176,10 +167,30 @@ export function BoardPage() {
     });
   }
 
-  // ── 6. Render states ───────────────────────────────────────────────────────
+  // 7. Complete sprint confirmation handler
+  const handleCompleteConfirm = async (
+    targetSprintId: string | null,
+    // _generateSummary: boolean,
+  ) => {
+    if (!sprint) return;
+    try {
+      const payload: CompleteSprintRequest = {
+        moveUnfinishedTo: targetSprintId ?? "backlog",
+      };
+      await completeSprint.mutateAsync({
+        sprintId: sprint.id,
+        data: payload,
+      });
+      setIsCompleteModalOpen(false);
+      void refetch();
+    } catch (err) {
+      console.error("Failed to complete sprint:", err);
+    }
+  };
 
-  // Project or board loading
-  if (projectQuery.isLoading || (activeSprint && isLoading)) {
+  // ── Render states ──────────────────────────────────────────────────────────
+
+  if (projectQuery.isLoading || (activeSprintId && isLoading)) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <Spinner size="lg" />
@@ -187,7 +198,6 @@ export function BoardPage() {
     );
   }
 
-  // Error fetching board
   if (isError) {
     return (
       <div className="mx-auto max-w-md py-16 text-center">
@@ -208,8 +218,7 @@ export function BoardPage() {
     );
   }
 
-  // No active sprint
-  if (!activeSprint) {
+  if (!activeSprintId) {
     return (
       <EmptyState
         title={board.noActiveSprint}
@@ -217,10 +226,7 @@ export function BoardPage() {
         icon={<Kanban size={40} className="text-indigo-500" />}
         action={
           <Link to={`/projects/${projectId ?? ""}/backlog`}>
-            <Button
-              variant="primary"
-              leftIcon={<ListTodo size={16} />}
-            >
+            <Button variant="primary" leftIcon={<ListTodo size={16} />}>
               {board.goToBacklog}
             </Button>
           </Link>
@@ -229,7 +235,6 @@ export function BoardPage() {
     );
   }
 
-  // Sprint loaded but board columns not yet available (should not happen in practice)
   if (!sprint || !columns) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -238,32 +243,35 @@ export function BoardPage() {
     );
   }
 
-  // ── 7. Main board ──────────────────────────────────────────────────────────
+  const plannedSprints = allSprints.filter(
+    (s) => s.status === "planned" && s.id !== sprint.id,
+  );
+
+  // ── Main board ─────────────────────────────────────────────────────────────
   return (
     <div className="flex h-full flex-col">
       {/* Sprint header */}
       <SprintHeader
         sprint={sprint}
-        onCompleteSprint={() => {
-          // TODO (Day 5): open CompleteSprintDialog
-        }}
+        onCompleteSprint={() => setIsCompleteModalOpen(true)}
         onSummarize={() => {
-          // TODO (Day 6): trigger AI summary
+          /* TODO Day 6: AI summary */
         }}
         onAskAi={() => {
-          // TODO (Day 6): open AI drawer
+          /* TODO Day 6: AI drawer */
         }}
+        isCompleting={completeSprint.isPending}
       />
 
-      {/* Kanban columns — horizontal scroll on small screens */}
-      <div className="flex-1 overflow-x-auto pb-4">
+      {/* ── Columns area ─────────────────────────────────────────────────── */}
+      <div className="min-h-0 flex-1 overflow-x-auto pb-4">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="flex min-w-[640px] gap-3 sm:gap-4">
+          <div className="grid min-w-[760px] grid-cols-4 gap-3 sm:gap-4">
             {TODO_STATUSES.map((status) => (
               <BoardColumn
                 key={status}
@@ -275,13 +283,15 @@ export function BoardPage() {
             ))}
           </div>
 
-          {/* Floating drag overlay — renders the card being dragged */}
+          {/* Floating ghost card rendered by dnd-kit during drag */}
           <DragOverlay dropAnimation={null}>
             {activeDragTodo ? (
-              <div className="w-64 rotate-1 opacity-95">
+              <div className="w-56 rotate-1 opacity-95 drop-shadow-2xl">
                 <TodoCard
                   todo={activeDragTodo}
-                  onOpen={() => {/* overlay is non-interactive */}}
+                  onOpen={() => {
+                    /* overlay is non-interactive */
+                  }}
                 />
               </div>
             ) : null}
@@ -298,6 +308,18 @@ export function BoardPage() {
           isOpen={isDetailOpen}
           onClose={closeDetail}
           sprints={sprint ? [sprint] : []}
+        />
+      )}
+
+      {/* Complete Sprint Modal */}
+      {sprint && (
+        <CompleteSprintDialog
+          isOpen={isCompleteModalOpen}
+          onClose={() => setIsCompleteModalOpen(false)}
+          activeSprint={sprint}
+          plannedSprints={plannedSprints}
+          onConfirm={handleCompleteConfirm}
+          isPending={completeSprint.isPending}
         />
       )}
     </div>

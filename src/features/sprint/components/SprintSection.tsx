@@ -1,7 +1,7 @@
 import type { Sprint, Todo, StartSprintRequest } from "../../../types/api";
 import { useTranslation } from "../../../store/useAppStore";
 import { BacklogSectionList } from "../../todos/BacklogSectionList";
-import { SprintHeader } from "./SprintHeader";
+import { SprintHeader } from "./SprintHeaderBacklog";
 
 interface SprintSectionProps {
   sprint: Sprint;

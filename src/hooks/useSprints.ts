@@ -17,9 +17,10 @@ import type {
 
 export function useSprints(projectId: string | undefined) {
   const queryClient = useQueryClient();
+  const sprintsQueryKey = ["projects", projectId, "sprints"];
 
   const sprintsQuery = useQuery({
-    queryKey: ["projects", projectId, "sprints"],
+    queryKey: sprintsQueryKey,
     queryFn: () => {
       if (!projectId) throw new Error("Project ID is required");
       return getProjectSprints(projectId);
@@ -35,20 +36,16 @@ export function useSprints(projectId: string | undefined) {
       if (!projectId) throw new Error("Project ID is required");
       return createSprint(projectId, data);
     },
-    onSuccess: (newSprint, variables) => {
-      queryClient.setQueryData(
-        ["projects", projectId, "sprints"],
-        (old: Sprint[] = []) => [...old, newSprint],
-      );
+    onSuccess: async (newSprint, variables) => {
+      queryClient.setQueryData(sprintsQueryKey, (old: Sprint[] = []) => [
+        ...old,
+        newSprint,
+      ]);
+      await queryClient.invalidateQueries({ queryKey: sprintsQueryKey });
       if (variables.todoIds?.length) {
-        void Promise.all([
-          queryClient.invalidateQueries({
-            queryKey: ["projects", projectId, "todos"],
-          }),
-          queryClient.invalidateQueries({
-            queryKey: ["projects", projectId, "sprints"],
-          }),
-        ]);
+        await queryClient.invalidateQueries({
+          queryKey: ["projects", projectId, "todos"],
+        });
       }
     },
   });
@@ -61,22 +58,21 @@ export function useSprints(projectId: string | undefined) {
       sprintId: string;
       data: UpdateSprintRequest;
     }) => updateSprint(sprintId, data),
-    onSuccess: (updatedSprint) => {
-      queryClient.setQueryData(
-        ["projects", projectId, "sprints"],
-        (old: Sprint[] = []) =>
-          old.map((s) => (s.id === updatedSprint.id ? updatedSprint : s)),
+    onSuccess: async (updatedSprint) => {
+      queryClient.setQueryData(sprintsQueryKey, (old: Sprint[] = []) =>
+        old.map((s) => (s.id === updatedSprint.id ? updatedSprint : s)),
       );
+      await queryClient.invalidateQueries({ queryKey: sprintsQueryKey });
     },
   });
 
   const deleteSprintMutation = useMutation({
     mutationFn: (sprintId: string) => deleteSprint(sprintId),
-    onSuccess: (_, deletedSprintId) => {
-      queryClient.setQueryData(
-        ["projects", projectId, "sprints"],
-        (old: Sprint[] = []) => old.filter((s) => s.id !== deletedSprintId),
+    onSuccess: async (_, deletedSprintId) => {
+      queryClient.setQueryData(sprintsQueryKey, (old: Sprint[] = []) =>
+        old.filter((s) => s.id !== deletedSprintId),
       );
+      await queryClient.invalidateQueries({ queryKey: sprintsQueryKey });
     },
   });
 
@@ -88,12 +84,15 @@ export function useSprints(projectId: string | undefined) {
       sprintId: string;
       data: StartSprintRequest;
     }) => startSprint(sprintId, data),
-    onSuccess: (startedSprint) => {
-      queryClient.setQueryData(
-        ["projects", projectId, "sprints"],
-        (old: Sprint[] = []) =>
-          old.map((s) => (s.id === startedSprint.id ? startedSprint : s)),
+    onSuccess: async (startedSprint) => {
+      queryClient.setQueryData(sprintsQueryKey, (old: Sprint[] = []) =>
+        old.map((s) => (s.id === startedSprint.id ? startedSprint : s)),
       );
+      // إبطال شامل للمشروع والسبرنتات لضمان تحديث الـ Active Sprint في البورد فوراً
+      await queryClient.invalidateQueries({
+        queryKey: ["projects", projectId],
+      });
+      await queryClient.invalidateQueries({ queryKey: sprintsQueryKey });
     },
   });
 
@@ -106,19 +105,16 @@ export function useSprints(projectId: string | undefined) {
       data: CompleteSprintRequest;
     }) => completeSprint(sprintId, data),
     onSuccess: async (completedSprint) => {
-      queryClient.setQueryData(
-        ["projects", projectId, "sprints"],
-        (old: Sprint[] = []) =>
-          old.map((s) => (s.id === completedSprint.id ? completedSprint : s)),
+      queryClient.setQueryData(sprintsQueryKey, (old: Sprint[] = []) =>
+        old.map((s) => (s.id === completedSprint.id ? completedSprint : s)),
       );
 
       await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["projects", projectId] }),
         queryClient.invalidateQueries({
           queryKey: ["projects", projectId, "todos"],
         }),
-        queryClient.invalidateQueries({
-          queryKey: ["projects", projectId, "sprints"],
-        }),
+        queryClient.invalidateQueries({ queryKey: sprintsQueryKey }),
       ]);
     },
   });

@@ -1,7 +1,16 @@
-import { differenceInCalendarDays, parseISO } from "date-fns";
-import { CalendarDays, Target, Sparkles, CheckCheck, Bot } from "lucide-react";
+import { differenceInCalendarDays, parseISO, format } from "date-fns";
+import {
+  CalendarRange,
+  Target,
+  Sparkles,
+  CheckCircle2,
+  Bot,
+  Clock,
+  Zap,
+} from "lucide-react";
 import { Button } from "../../../components/ui/Button";
 import type { Sprint } from "../../../types/api";
+import { useTranslation } from "../../../store/useAppStore";
 
 interface SprintHeaderProps {
   sprint: Sprint;
@@ -11,22 +20,17 @@ interface SprintHeaderProps {
   isCompleting?: boolean;
 }
 
-/** Format a YYYY-MM-DD date string for display, e.g. "Nov 3, 2026" */
+/** "Nov 3, 2026" */
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return "—";
   try {
-    return parseISO(dateStr).toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+    return format(parseISO(dateStr), "MMM d, yyyy");
   } catch {
     return dateStr;
   }
 }
 
-/** Returns days remaining (positive) or days overdue (negative). */
-function daysLeft(endDate: string | null): number | null {
+function daysRemaining(endDate: string | null): number | null {
   if (!endDate) return null;
   try {
     return differenceInCalendarDays(parseISO(endDate), new Date());
@@ -35,6 +39,57 @@ function daysLeft(endDate: string | null): number | null {
   }
 }
 
+// ── Smooth animated progress bar ───────────────────────────────────────────
+interface ProgressBarProps {
+  value: number; // 0-100
+  colorClass: string;
+  trackClass: string;
+}
+function ProgressBar({ value, colorClass, trackClass }: ProgressBarProps) {
+  const pct = Math.min(100, Math.max(0, value));
+  return (
+    <div className={`relative h-1.5 w-full overflow-hidden rounded-full ${trackClass}`}>
+      <div
+        className={`absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out ${colorClass}`}
+        style={{ width: `${pct}%` }}
+      />
+    </div>
+  );
+}
+
+// ── Stat chip ───────────────────────────────────────────────────────────────
+interface StatChipProps {
+  label: string;
+  value: string;
+  pct: number;
+  icon: React.ReactNode;
+  barColor: string;
+  barTrack: string;
+  pctColor: string;
+}
+function StatChip({ label, value, pct, icon, barColor, barTrack, pctColor }: StatChipProps) {
+  return (
+    <div className="flex min-w-[160px] flex-1 flex-col gap-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          {icon}
+          {label}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200">
+            {value}
+          </span>
+          <span className={`text-[11px] font-bold tabular-nums ${pctColor}`}>
+            {pct}%
+          </span>
+        </div>
+      </div>
+      <ProgressBar value={pct} colorClass={barColor} trackClass={barTrack} />
+    </div>
+  );
+}
+
+// ── Main component ──────────────────────────────────────────────────────────
 export function SprintHeader({
   sprint,
   onCompleteSprint,
@@ -42,7 +97,11 @@ export function SprintHeader({
   onAskAi,
   isCompleting = false,
 }: SprintHeaderProps) {
+  const { t } = useTranslation();
+  const bd = t.projectsPage.boardPage;
+
   const stats = sprint.stats;
+
   const pointsPct =
     stats.totalPoints > 0
       ? Math.round((stats.donePoints / stats.totalPoints) * 100)
@@ -52,140 +111,144 @@ export function SprintHeader({
       ? Math.round((stats.doneTodos / stats.totalTodos) * 100)
       : 0;
 
-  const remaining = daysLeft(sprint.endDate);
+  // حساب المهام غير المنتهية (التلسين أو الترحيل للباكلوج)
+  const unfinishedTodos = stats.totalTodos - stats.doneTodos;
+
+  const remaining = daysRemaining(sprint.endDate);
+
   const daysLabel =
     remaining === null
-      ? "No end date"
+      ? bd.noEndDate
       : remaining > 0
-        ? `${remaining} day${remaining !== 1 ? "s" : ""} left`
+        ? `${remaining} ${bd.daysLeft}`
         : remaining === 0
-          ? "Due today"
-          : `${Math.abs(remaining)} day${Math.abs(remaining) !== 1 ? "s" : ""} overdue`;
+          ? bd.dueToday
+          : `${Math.abs(remaining)} ${bd.daysOverdue}`;
 
-  const daysColor =
+  const daysChipClass =
     remaining === null
-      ? "text-slate-400"
+      ? "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
       : remaining > 3
-        ? "text-emerald-600 dark:text-emerald-400"
+        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
         : remaining >= 0
-          ? "text-amber-600 dark:text-amber-400"
-          : "text-red-600 dark:text-red-400";
+          ? "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400"
+          : "bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-400";
 
   return (
-    <div className="mb-5 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <div className="mb-6 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
 
-      {/* ── Top: title, dates, actions ── */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        {/* Left: sprint name + meta */}
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
-              {sprint.name}
-            </h1>
-            {/* Status badge */}
-            <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
-              Active
-            </span>
-          </div>
+      {/* Thin accent bar — Jira style */}
+      <div className="h-[3px] w-full bg-gradient-to-r from-indigo-500 via-violet-500 to-indigo-400" />
 
-          {/* Date range + days left */}
-          <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs font-medium text-slate-500 dark:text-slate-400">
-            <span className="flex items-center gap-1.5">
-              <CalendarDays size={13} className="shrink-0 text-slate-400" />
-              {formatDate(sprint.startDate)} — {formatDate(sprint.endDate)}
-            </span>
-            <span className={`font-bold ${daysColor}`}>{daysLabel}</span>
-          </div>
+      <div className="p-5 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          {/* Left block */}
+          <div className="min-w-0 space-y-2">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h1 className="text-lg font-black tracking-tight text-slate-900 dark:text-slate-50 sm:text-xl">
+                {sprint.name}
+              </h1>
 
-          {/* Sprint goal */}
-          {sprint.goal && (
-            <div className="mt-2 flex items-start gap-1.5">
-              <Target
-                size={13}
-                className="mt-0.5 shrink-0 text-indigo-500 dark:text-indigo-400"
-              />
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                <span className="font-semibold text-slate-700 dark:text-slate-300">
-                  Goal:
-                </span>{" "}
-                {sprint.goal}
-              </p>
+              <span className="inline-flex h-5 items-center gap-1 rounded-full bg-emerald-100 pl-1.5 pr-2.5 text-[10px] font-bold uppercase tracking-widest text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
+                {bd.active}
+              </span>
+
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${daysChipClass}`}
+              >
+                <Clock size={10} strokeWidth={2.5} />
+                {daysLabel}
+              </span>
+
+              {/* تنبيه إذا كان هناك مهام غير منتهية */}
+              {unfinishedTodos > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60">
+                  ⚠️ {unfinishedTodos} unfinished tasks will move to backlog
+                </span>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* Right: action buttons */}
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            leftIcon={<Bot size={14} />}
-            onClick={onAskAi}
-          >
-            Ask AI
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            leftIcon={<Sparkles size={14} />}
-            onClick={onSummarize}
-          >
-            Summarize
-          </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            leftIcon={<CheckCheck size={14} />}
-            onClick={onCompleteSprint}
-            isLoading={isCompleting}
-          >
-            Complete sprint
-          </Button>
-        </div>
-      </div>
-
-      {/* ── Progress bars ── */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {/* Points progress */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Story Points
-            </span>
-            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-              {stats.donePoints} / {stats.totalPoints} pts
-              <span className="ml-1.5 text-indigo-600 dark:text-indigo-400">
-                ({pointsPct}%)
+            <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+              <CalendarRange size={13} className="shrink-0 text-slate-400" />
+              <span>
+                {formatDate(sprint.startDate)}&nbsp;&mdash;&nbsp;{formatDate(sprint.endDate)}
               </span>
-            </span>
+            </div>
+
+            {sprint.goal && (
+              <div className="flex items-start gap-1.5 pt-0.5">
+                <Target
+                  size={13}
+                  className="mt-0.5 shrink-0 text-indigo-500 dark:text-indigo-400"
+                />
+                <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                  <span className="font-semibold">{bd.sprintGoalLabel}:</span>{" "}
+                  {sprint.goal}
+                </p>
+              </div>
+            )}
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-            <div
-              className="h-full rounded-full bg-indigo-500 transition-all duration-500 dark:bg-indigo-400"
-              style={{ width: `${pointsPct}%` }}
-            />
+
+          {/* Right: action buttons */}
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              leftIcon={<Bot size={13} />}
+              onClick={onAskAi}
+              className="h-8 rounded-lg text-xs font-semibold cursor-pointer"
+            >
+              {bd.askAi}
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<Sparkles size={13} />}
+              onClick={onSummarize}
+              className="h-8 rounded-lg text-xs font-semibold cursor-pointer"
+            >
+              {bd.summarize}
+            </Button>
+
+            {/* زر إنهاء السبرنت المرتبط مباشرة بالهوك */}
+            <Button
+              variant="primary"
+              size="sm"
+              leftIcon={<CheckCircle2 size={13} className="shrink-0" />}
+              onClick={onCompleteSprint}
+              isLoading={isCompleting}
+              className="h-8 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-sm"
+            >
+              {bd.completeSprint}
+            </Button>
           </div>
         </div>
 
-        {/* Tasks progress */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Tasks
-            </span>
-            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-              {stats.doneTodos} / {stats.totalTodos} done
-              <span className="ml-1.5 text-emerald-600 dark:text-emerald-400">
-                ({todosPct}%)
-              </span>
-            </span>
-          </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-            <div
-              className="h-full rounded-full bg-emerald-500 transition-all duration-500 dark:bg-emerald-400"
-              style={{ width: `${todosPct}%` }}
-            />
-          </div>
+        {/* Progress stats */}
+        <div className="mt-5 flex flex-wrap gap-4 border-t border-slate-100 pt-5 dark:border-slate-800">
+          <StatChip
+            label={bd.storyPointsLabel}
+            value={`${stats.donePoints} / ${stats.totalPoints} ${bd.pts}`}
+            pct={pointsPct}
+            icon={<Zap size={11} strokeWidth={2.5} className="text-indigo-500" />}
+            barColor="bg-indigo-500 dark:bg-indigo-400"
+            barTrack="bg-indigo-100 dark:bg-indigo-950/40"
+            pctColor="text-indigo-600 dark:text-indigo-400"
+          />
+
+          <div className="hidden w-px self-stretch bg-slate-200 dark:bg-slate-800 sm:block" />
+
+          <StatChip
+            label={bd.tasksLabel}
+            value={`${stats.doneTodos} / ${stats.totalTodos} ${bd.done}`}
+            pct={todosPct}
+            icon={<CheckCircle2 size={11} strokeWidth={2.5} className="text-emerald-500" />}
+            barColor="bg-emerald-500 dark:bg-emerald-400"
+            barTrack="bg-emerald-100 dark:bg-emerald-950/40"
+            pctColor="text-emerald-600 dark:text-emerald-400"
+          />
         </div>
       </div>
     </div>

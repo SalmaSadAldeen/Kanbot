@@ -301,7 +301,6 @@ export function BacklogPage() {
               }}
             />
 
-            {/* تم إزالة overflow-hidden لتجنب قص القائمة المنبثقة لأي عنصر أخير */}
             <section className="rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <SectionHeader
                 title={copy.backlog}

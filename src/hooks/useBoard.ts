@@ -2,16 +2,18 @@ import { useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSprintBoard } from "../api/sprints";
 import { moveTodo } from "../api/todos";
-import type { SprintBoardResponse, Todo, TodoStatus, MoveTodoRequest } from "../types/api";
+import type {
+  SprintBoardResponse,
+  Todo,
+  TodoStatus,
+  MoveTodoRequest,
+} from "../types/api";
 import { TODO_STATUSES } from "../types/api";
 import toast from "react-hot-toast";
 
 /**
  * Fetches the board layout for a specific sprint and provides a
  * board-aware moveTodo mutation with full optimistic updates and rollback.
- *
- * The board cache key is  ["sprints", sprintId, "board"]
- * which matches what useBoard already used — existing invalidations stay valid.
  */
 export function useBoard(sprintId: string | undefined) {
   const queryClient = useQueryClient();
@@ -22,22 +24,16 @@ export function useBoard(sprintId: string | undefined) {
     queryKey,
     queryFn: () => getSprintBoard(sprintId!),
     enabled: Boolean(sprintId),
-    staleTime: 1000 * 60 * 2,   // board is more volatile than backlog
+    staleTime: 1000 * 60 * 2,
     refetchOnWindowFocus: true,
   });
 
   // ── Board-level move with optimistic update ────────────────────────────────
   const moveMutation = useMutation({
-    mutationFn: ({
-      todoId,
-      data,
-    }: {
-      todoId: string;
-      data: MoveTodoRequest;
-    }) => moveTodo(todoId, data),
+    mutationFn: ({ todoId, data }: { todoId: string; data: MoveTodoRequest }) =>
+      moveTodo(todoId, data),
 
     onMutate: async ({ todoId, data }) => {
-      // Cancel any in-flight refetch so it doesn't overwrite our optimistic state
       await queryClient.cancelQueries({ queryKey });
 
       const previous = queryClient.getQueryData<SprintBoardResponse>(queryKey);
@@ -46,13 +42,11 @@ export function useBoard(sprintId: string | undefined) {
         queryClient.setQueryData<SprintBoardResponse>(queryKey, (old) => {
           if (!old) return old;
 
-          // Build a mutable deep copy of columns
           const cols = {} as Record<TodoStatus, Todo[]>;
           for (const status of TODO_STATUSES) {
             cols[status] = [...old.columns[status]];
           }
 
-          // Find and remove the card from its source column
           let movedTodo: Todo | undefined;
           for (const status of TODO_STATUSES) {
             const idx = cols[status].findIndex((t) => t.id === todoId);
@@ -64,7 +58,6 @@ export function useBoard(sprintId: string | undefined) {
 
           if (!movedTodo) return old;
 
-          // Apply the new status/sprintId from the move request
           const updatedTodo: Todo = {
             ...movedTodo,
             ...(data.status !== undefined && { status: data.status }),
@@ -72,13 +65,11 @@ export function useBoard(sprintId: string | undefined) {
             order: data.position,
           };
 
-          // Insert into the target column at the requested position
           const targetStatus = data.status ?? movedTodo.status;
           const targetCol = cols[targetStatus];
           const insertAt = Math.min(data.position, targetCol.length);
           targetCol.splice(insertAt, 0, updatedTodo);
 
-          // Re-assign order based on final positions
           for (const status of TODO_STATUSES) {
             cols[status] = cols[status].map((t, i) => ({ ...t, order: i }));
           }
@@ -91,20 +82,21 @@ export function useBoard(sprintId: string | undefined) {
     },
 
     onError: (_err, _vars, context) => {
-      // Roll back to the snapshot taken before the optimistic update
       if (context?.previous) {
         queryClient.setQueryData(queryKey, context.previous);
       }
       toast.error("Failed to move card. Changes rolled back.");
     },
 
-    onSuccess: () => {
-      // Server is the source of truth — invalidate to get accurate order values
-      void queryClient.invalidateQueries({ queryKey });
+    onSuccess: async () => {
+      // إبطال كاش البورد والـ todos لضمان تزامن البيانات تماماً فوراً
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey }),
+        queryClient.invalidateQueries({ queryKey: ["projects"] }),
+      ]);
     },
   });
 
-  // ── Convenience wrapper ────────────────────────────────────────────────────
   const moveCard = useCallback(
     (todoId: string, data: MoveTodoRequest) =>
       moveMutation.mutate({ todoId, data }),
