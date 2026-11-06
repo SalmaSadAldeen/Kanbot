@@ -99,13 +99,7 @@ html.dark ::-webkit-scrollbar-thumb:hover {
   background: rgba(71, 85, 105, 0.55);
 }
 
-html,
-body,
-#root {
-  transition:
-    background-color 0.25s ease,
-    color 0.25s ease;
-}
+/* تم إزالة الـ transition العام من هنا منعاً لأي مطّة أو رجة بصرية عند تغيير الاتجاه أو اللغة */
 
 input[type="date"]::-webkit-calendar-picker-indicator {
   filter: none;
@@ -121,7 +115,7 @@ html.dark select option {
   background-color: #1e293b;
   color: #f1f5f9;
 }
-/* إخفاء أيقونة إظهار كلمة المرور الافتراضية الخاصة بالمتصفحات في حقول الباسورد */
+
 input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear {
   display: none;

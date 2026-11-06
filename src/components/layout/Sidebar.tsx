@@ -9,7 +9,9 @@ import toast from "react-hot-toast";
 export function Sidebar() {
   const { t, isRtl, lang } = useTranslation();
   const isCollapsed = useAppStore((state) => state.isCollapsed);
+  const isMobileSidebarOpen = useAppStore((state) => state.isMobileSidebarOpen);
   const closeMobileSidebar = useAppStore((state) => state.closeMobileSidebar);
+
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -102,19 +104,15 @@ export function Sidebar() {
 
   return (
     <aside
-      key={lang}
       id="app-sidebar"
-      dir={isRtl ? "rtl" : "ltr"}
-      className={`flex flex-col h-full shrink-0 bg-slate-50/95 backdrop-blur-md dark:bg-slate-900/95 z-30 shadow-sm transition-all duration-300 ease-in-out overflow-hidden ${
-        isRtl ? "border-l" : "border-r"
-      } border-slate-200 dark:border-slate-800 ${
-        isCollapsed ? "w-16 min-w-[4rem]" : "w-64 min-w-[16rem]"
-      }`}
-      style={{ flexShrink: 0 }}
+      className={`flex flex-col h-full bg-slate-50/95 backdrop-blur-md dark:bg-slate-900/95 z-30 shadow-sm overflow-hidden rtl:border-l ltr:border-r border-slate-200 dark:border-slate-800 ${
+        isMobileSidebarOpen ? "flex" : "hidden lg:flex"
+      } ${isCollapsed ? "lg:w-16 lg:min-w-[4rem]" : "w-64 min-w-[16rem]"}`}
+      style={{ flexShrink: 0, transition: "none !important" }}
     >
       <div
         className={`p-3 shrink-0 ${
-          isCollapsed ? "pointer-events-none opacity-50" : "opacity-100"
+          isCollapsed ? "lg:pointer-events-none lg:opacity-50" : "opacity-100"
         }`}
       >
         <ProjectSwitcher />
@@ -152,7 +150,9 @@ export function Sidebar() {
                 const activeState = isCustomActive;
                 return [
                   "group relative flex min-h-10 items-center rounded-xl text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-indigo-500",
-                  isCollapsed ? "justify-center px-0" : "gap-3 px-3",
+                  isCollapsed
+                    ? "lg:justify-center lg:px-0 px-3 gap-3"
+                    : "gap-3 px-3",
                   activeState
                     ? "bg-indigo-50/80 text-indigo-700 font-semibold shadow-xs before:absolute before:inset-y-2.5 rtl:before:right-0 ltr:before:left-0 before:w-1 before:rounded-e before:bg-indigo-600 dark:bg-indigo-950/70 dark:text-indigo-300 dark:before:bg-indigo-400"
                     : "text-slate-600 hover:bg-slate-200/50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-slate-100",
@@ -171,9 +171,11 @@ export function Sidebar() {
                           : "text-slate-400 group-hover:text-slate-700 dark:text-slate-500 dark:group-hover:text-slate-300"
                       }`}
                     />
-                    {!isCollapsed && (
-                      <span className="truncate tracking-wide">{name}</span>
-                    )}
+                    <span
+                      className={`${isCollapsed ? "lg:hidden" : ""} truncate tracking-wide`}
+                    >
+                      {name}
+                    </span>
                   </>
                 );
               }}
@@ -185,22 +187,20 @@ export function Sidebar() {
       <div className="border-t border-slate-200/80 p-2.5 shrink-0 dark:border-slate-800/80 mt-auto bg-slate-100/50 dark:bg-slate-900/50">
         <div
           className={`flex items-center rounded-xl p-2 ${
-            isCollapsed ? "justify-center" : "gap-2.5"
+            isCollapsed ? "lg:justify-center gap-2.5" : "gap-2.5"
           }`}
         >
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 text-xs font-bold text-white shadow-xs">
             {userInitials}
           </div>
-          {!isCollapsed && (
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-bold text-slate-800 dark:text-slate-100">
-                {userName}
-              </p>
-              <p className="truncate text-[11px] text-slate-400 dark:text-slate-500 font-medium">
-                {userEmail}
-              </p>
-            </div>
-          )}
+          <div className={`${isCollapsed ? "lg:hidden" : ""} min-w-0 flex-1`}>
+            <p className="truncate text-xs font-bold text-slate-800 dark:text-slate-100">
+              {userName}
+            </p>
+            <p className="truncate text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+              {userEmail}
+            </p>
+          </div>
         </div>
       </div>
     </aside>

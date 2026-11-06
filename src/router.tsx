@@ -4,6 +4,7 @@ import { createBrowserRouter, Navigate } from "react-router";
 import { ProtectedRoute } from "./features/auth/ProtectedRoute";
 import { GuestRoute } from "./features/auth/GuestRoute";
 import { AppShell } from "./components/layout/AppShell";
+import { Spinner } from "./components/ui/Spinner"; // استيراد مكون السبينر الجميل تبعك
 
 const LoginPage = React.lazy(() =>
   import("./features/auth/pages/LoginPage").then((mod) => ({
@@ -41,10 +42,11 @@ const SettingsPage = React.lazy(() =>
   })),
 );
 
+// استخدام الـ Spinner المخصص الخاص بكِ لضمان ثبات الشكل وعدم حدوث رجة
 function RouteFallback() {
   return (
-    <div className="flex min-h-[220px] items-center justify-center text-sm font-medium text-slate-500 dark:text-slate-400">
-      Loading page...
+    <div className="flex min-h-[220px] w-full items-center justify-center">
+      <Spinner size="lg" />
     </div>
   );
 }

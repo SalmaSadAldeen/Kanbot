@@ -3,11 +3,13 @@ import { Outlet, useLocation } from "react-router";
 import { Sidebar } from "../layout/Sidebar";
 import { Topbar } from "../layout/Topbar";
 import { ToastProvider } from "../ui/ToastProvider";
-import { useAppStore } from "../../store/useAppStore";
+import { useAppStore, useTranslation } from "../../store/useAppStore";
 import { AiRoot } from "../../features/ai/AiRoot";
 
 export function AppShell() {
-  const { isMobileSidebarOpen, closeMobileSidebar } = useAppStore();
+  const { isMobileSidebarOpen, closeMobileSidebar, isCollapsed } =
+    useAppStore();
+  const { isRtl } = useTranslation();
   const location = useLocation();
 
   useEffect(() => {
@@ -34,8 +36,21 @@ export function AppShell() {
     };
   }, [isMobileSidebarOpen]);
 
+  // تحديد عرض السايد بار حسب حالة الطي (Collapsed أو مفتوح)
+  const sidebarWidthClass = isCollapsed ? "lg:w-16" : "lg:w-64";
+  const mainMarginClass = isRtl
+    ? isCollapsed
+      ? "lg:mr-16"
+      : "lg:mr-64"
+    : isCollapsed
+      ? "lg:ml-16"
+      : "lg:ml-64";
+
   return (
-    <div className="flex h-screen w-screen flex-col overflow-hidden bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-50">
+    <div
+      dir={isRtl ? "rtl" : "ltr"}
+      className="flex h-screen w-screen flex-col overflow-hidden bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-50"
+    >
       <ToastProvider />
       <AiRoot />
 
@@ -50,12 +65,17 @@ export function AppShell() {
           />
         )}
 
-        {/* الحاوية بترتب السايد بار والمين بشكل طبيعي ومستقر تماماً باللغتين */}
-        <div className="shrink-0 z-30 lg:static flex">
+        {/* السايد بار بموضع ثابت مطلق على الديسكتوب لا يتأثر بأي تدفق ولن يتحرك أبداً */}
+        <div
+          className={`fixed lg:absolute top-0 bottom-0 ${isRtl ? "right-0" : "left-0"} z-30 h-full ${sidebarWidthClass} transition-none`}
+        >
           <Sidebar />
         </div>
 
-        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-4 sm:p-6">
+        {/* المحتوى الرئيسي يأخذ مساحة فارغة تكتيكية تناسب عرض السايد بار تماماً */}
+        <main
+          className={`flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-4 sm:p-6 ${mainMarginClass} transition-none`}
+        >
           <Outlet />
         </main>
       </div>

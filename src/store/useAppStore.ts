@@ -53,9 +53,8 @@ export const useAppStore = create<AppState>()(
 
       toggleLanguage: () => {
         const nextLang = get().lang === "en" ? "ar" : "en";
-        // إغلاق السايد بار لحظياً لمنع التشوه البصري عند قلب الاتجاه
-        set({ isCollapsed: false, isMobileSidebarOpen: false });
         applyThemeAndLang(get().theme, nextLang);
+        // عند تغيير اللغة نبقي السايد بار محافظاً على حالته ولا نغلقه تلقائياً
         set({ lang: nextLang });
       },
 
@@ -63,9 +62,11 @@ export const useAppStore = create<AppState>()(
         if (typeof window !== "undefined" && window.innerWidth < 1024) {
           set({ isMobileSidebarOpen: !get().isMobileSidebarOpen });
         } else {
+          // على الشاشات الكبيرة والمتوسطة، يتحكم بالطي والتوسيع فقط ولا يغلق أبداً إلا برغبتك
           set({ isCollapsed: !get().isCollapsed });
         }
       },
+
       closeMobileSidebar: () => set({ isMobileSidebarOpen: false }),
       setLastProjectId: (id: string | null) => set({ lastProjectId: id }),
     }),
@@ -80,7 +81,6 @@ export const useAppStore = create<AppState>()(
   ),
 );
 
-// استخراج الـ Hook بشكل صريح ومستقل تماماً
 export function useTranslation() {
   const lang = useAppStore((state) => state.lang);
   return {
