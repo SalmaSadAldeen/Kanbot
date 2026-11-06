@@ -120,11 +120,14 @@ export function TodoCard({ todo, onOpen, isMoving = false }: TodoCardProps) {
     <div
       ref={setNodeRef}
       style={style}
-      onClick={() => onOpen(todo)}
+      onClick={() => {
+        if (isDragging) return;
+        onOpen(todo);
+      }}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
+        if (e.key === "Enter") {
           e.preventDefault();
           onOpen(todo);
         }
@@ -168,23 +171,22 @@ export function TodoCard({ todo, onOpen, isMoving = false }: TodoCardProps) {
             <TypeBadge type={todo.type} />
           </div>
 
-          {/* Drag handle — الـ listeners تابعة حصراً لهذه الأيقونة وحدها ويتم منع انتشار النقر */}
+          {/* Drag handle — ظاهر دائماً الآن */}
           <div
             {...attributes}
             {...listeners}
+            tabIndex={0}
             onClick={(e) => {
               e.stopPropagation();
+              e.preventDefault();
             }}
-            onPointerDown={(e) => {
-              e.stopPropagation();
-            }}
-            aria-label="Drag card"
+            aria-label="Drag card handle"
             className={[
               "flex h-6 w-5 shrink-0 cursor-grab items-center justify-center rounded",
-              "text-slate-300 opacity-0 transition-all",
-              "group-hover:opacity-100 hover:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700",
+              "text-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500",
+              "hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700",
               "active:cursor-grabbing",
-              "dark:text-slate-600 dark:hover:text-slate-400",
+              "dark:text-slate-500 dark:hover:text-slate-300",
             ].join(" ")}
           >
             <GripVertical size={13} strokeWidth={2} />

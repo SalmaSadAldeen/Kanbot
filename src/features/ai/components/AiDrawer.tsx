@@ -1,2 +1,62 @@
-import { useParams } from "react-router";import { X, RotateCcw } from "lucide-react";import { useAiUi } from "../../../store/useAiUi";import { useAiStatus } from "../../../hooks/useAi";import { useSprints } from "../../../hooks/useSprints";import { useTranslation } from "../../../store/useAppStore";import { AiChatPanel } from "./AiChatPanel";
-export function AiDrawer(){const {projectId=""}=useParams();const {t}=useTranslation();const c=t.ai;const open=useAiUi(s=>s.drawerOpen);const setOpen=useAiUi(s=>s.setDrawerOpen);const openDialog=useAiUi(s=>s.openDialog);const openSummary=useAiUi(s=>s.openSummary);const {allSprints}=useSprints(projectId);const {isMock}=useAiStatus();const active=allSprints.find(s=>s.status==="active");return <aside aria-label={c.title} aria-hidden={!open} inert={!open} className={`fixed inset-y-0 end-0 z-[60] flex w-full max-w-md flex-col border-s border-slate-200 bg-white p-4 shadow-2xl transition-transform duration-200 dark:border-slate-700 dark:bg-slate-900 ${open?"translate-x-0":"translate-x-full rtl:-translate-x-full"}`}><header className="mb-4 flex items-center gap-2 border-b pb-3 dark:border-slate-700"><h2 className="flex-1 font-bold">{c.title}</h2>{isMock&&<span className="rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-900 dark:bg-amber-950 dark:text-amber-200">{c.mock}</span>}<button type="button" aria-label={c.newChat} onClick={()=>window.dispatchEvent(new Event("kanbot:new-ai-chat"))} className="rounded p-2 hover:bg-slate-100 dark:hover:bg-slate-800"><RotateCcw size={16}/></button><button type="button" aria-label={c.close} onClick={()=>setOpen(false)} className="rounded p-2 hover:bg-slate-100 dark:hover:bg-slate-800"><X size={18}/></button></header><AiChatPanel key={projectId} hasActiveSprint={!!active} onQuickAction={action=>{setOpen(false);if(action==="generate")openDialog("generate");else if(action==="plan")openDialog("plan");else if(active)openSummary(active.id)}}/></aside>}
+import { useParams } from "react-router";
+import { X, RotateCcw } from "lucide-react";
+import { useAiUi } from "../../../store/useAiUi";
+import { useAiStatus } from "../../../hooks/useAi";
+import { useSprints } from "../../../hooks/useSprints";
+import { useTranslation } from "../../../store/useAppStore";
+import { AiChatPanel } from "./AiChatPanel";
+export function AiDrawer() {
+  const { projectId = "" } = useParams();
+  const { t } = useTranslation();
+  const c = t.ai;
+  const open = useAiUi((s) => s.drawerOpen);
+  const setOpen = useAiUi((s) => s.setDrawerOpen);
+  const openDialog = useAiUi((s) => s.openDialog);
+  const openSummary = useAiUi((s) => s.openSummary);
+  const { allSprints } = useSprints(projectId);
+  const { isMock } = useAiStatus();
+  const active = allSprints.find((s) => s.status === "active");
+  return (
+    <aside
+      aria-label={c.title}
+      aria-hidden={!open}
+      inert={!open}
+      className={`fixed inset-y-0 end-0 z-[60] flex w-full max-w-md flex-col border-s border-slate-200 bg-white p-4 shadow-2xl transition-transform duration-200 dark:border-slate-700 dark:bg-slate-900 ${open ? "translate-x-0" : "translate-x-full rtl:-translate-x-full"}`}
+    >
+      <header className="mb-4 flex items-center gap-2 border-b pb-3 dark:border-slate-700">
+        <h2 className="flex-1 font-bold">{c.title}</h2>
+        {isMock && (
+          <span className="rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+            {c.mock}
+          </span>
+        )}
+        <button
+          type="button"
+          aria-label={c.newChat}
+          onClick={() => window.dispatchEvent(new Event("kanbot:new-ai-chat"))}
+          className="rounded p-2 hover:bg-slate-100 dark:hover:bg-slate-800"
+        >
+          <RotateCcw size={16} />
+        </button>
+        <button
+          type="button"
+          aria-label={c.close}
+          onClick={() => setOpen(false)}
+          className="rounded p-2 hover:bg-slate-100 dark:hover:bg-slate-800"
+        >
+          <X size={18} />
+        </button>
+      </header>
+      <AiChatPanel
+        key={projectId}
+        hasActiveSprint={!!active}
+        onQuickAction={(action) => {
+          setOpen(false);
+          if (action === "generate") openDialog("generate");
+          else if (action === "plan") openDialog("plan");
+          else if (active) openSummary(active.id);
+        }}
+      />
+    </aside>
+  );
+}

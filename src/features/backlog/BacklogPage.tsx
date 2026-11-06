@@ -340,13 +340,19 @@ export function BacklogPage() {
                       name: sprint.name,
                     }))}
                   />
+
+                  {/* تم تنسيق زر التوليد بالذكاء الاصطناعي وترتيب مكانه بدقة ضمن حاوية مرتبة */}
                   {rawBacklogTodos.length === 0 && (
-                    <Button
-                      variant="outline"
-                      onClick={() => openAiDialog("generate")}
-                    >
-                      {t.ai.generateWithAi}
-                    </Button>
+                    <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-start">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openAiDialog("generate")}
+                        className="gap-2"
+                      >
+                        {t.ai.generateWithAi}
+                      </Button>
+                    </div>
                   )}
 
                   <QuickCreateBar
