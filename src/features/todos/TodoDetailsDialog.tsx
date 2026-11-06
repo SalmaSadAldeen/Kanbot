@@ -22,6 +22,7 @@ import type {
 import { TODO_PRIORITIES, TODO_TYPES, STORY_POINTS } from "../../types/api";
 import { useTodos } from "../../hooks/useTodos";
 import { useTranslation } from "../../store/useAppStore";
+import toast from "react-hot-toast";
 
 interface TodoDetailsDialogProps {
   todo: Todo | null;
@@ -38,11 +39,12 @@ export function TodoDetailsDialog({
   onClose,
   sprints = [],
 }: TodoDetailsDialogProps) {
-  const { t } = useTranslation();
+  const { t, isRtl } = useTranslation();
   const dict = t.projectsPage.todoDetails;
 
   const { updateTodo, isUpdating } = useTodos(projectId);
 
+  // التهيئة الأولية للحالات مباشرة من الـ todo (بفضل استخدام key في الأب، لن نحتاج لـ useEffect)
   const [title, setTitle] = useState<string>(() => todo?.title ?? "");
   const [description, setDescription] = useState<string>(
     () => todo?.description ?? "",
@@ -61,24 +63,96 @@ export function TodoDetailsDialog({
   const [sprintId, setSprintId] = useState<string | null>(
     () => todo?.sprintId ?? null,
   );
+  const [formError, setFormError] = useState<string | null>(null);
 
   if (!isOpen || !todo) return null;
 
-  const handleSave = async () => {
-    await updateTodo({
-      todoId: todo.id,
-      data: {
-        title,
-        description,
-        priority,
-        type,
-        storyPoints,
-        status,
-        dueDate: dueDate || null,
-        sprintId,
-      },
-    });
+  // فحص هل توجد تغييرات غير محفوظة؟
+  const isDirty =
+    title !== (todo.title ?? "") ||
+    description !== (todo.description ?? "") ||
+    priority !== (todo.priority ?? "medium") ||
+    type !== (todo.type ?? "task") ||
+    storyPoints !== (todo.storyPoints ?? null) ||
+    status !== (todo.status ?? "todo") ||
+    dueDate !== (todo.dueDate ?? "") ||
+    sprintId !== (todo.sprintId ?? null);
+
+  const handleSafeClose = () => {
+    if (isDirty) {
+      toast(
+        (t) => (
+          <div className="flex items-center justify-between gap-4 w-full">
+            <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+              {isRtl
+                ? "تغييرات غير محفوظة، هل تريد التجاهل؟"
+                : "Unsaved changes. Discard?"}
+            </span>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  toast.dismiss(t.id);
+                  onClose();
+                }}
+                className="rounded-md bg-rose-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-xs transition hover:bg-rose-700 cursor-pointer"
+              >
+                {isRtl ? "تجاهل" : "Discard"}
+              </button>
+              <button
+                type="button"
+                onClick={() => toast.dismiss(t.id)}
+                className="rounded-md bg-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-800 transition hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600 cursor-pointer"
+              >
+                {isRtl ? "إلغاء" : "Keep"}
+              </button>
+            </div>
+          </div>
+        ),
+        {
+          duration: Infinity,
+          position: "top-center",
+          style: {
+            background: "var(--toast-bg, #ffffff)",
+            color: "var(--toast-color, #0f172a)",
+            border: "1px solid #e2e8f0",
+            padding: "12px 16px",
+            borderRadius: "12px",
+            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
+          },
+        },
+      );
+      return;
+    }
     onClose();
+  };
+
+  const handleSave = async () => {
+    setFormError(null);
+    if (!title.trim()) {
+      setFormError(isRtl ? "عنوان المهمة مطلوب" : "Task title is required");
+      return;
+    }
+
+    try {
+      await updateTodo({
+        todoId: todo.id,
+        data: {
+          title,
+          description,
+          priority,
+          type,
+          storyPoints,
+          status,
+          dueDate: dueDate || null,
+          sprintId,
+        },
+      });
+      onClose();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to update todo";
+      setFormError(msg);
+    }
   };
 
   return (
@@ -115,13 +189,15 @@ export function TodoDetailsDialog({
                   {dict.editTask}
                 </h2>
                 <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500">
-                  Manage task properties &amp; workflow
+                  {isRtl
+                    ? "إدارة خصائص وتدفق المهمة"
+                    : "Manage task properties & workflow"}
                 </p>
               </div>
             </div>
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleSafeClose}
               className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
               aria-label="Close"
             >
@@ -131,6 +207,12 @@ export function TodoDetailsDialog({
 
           {/* Body */}
           <div className="flex-1 space-y-5 overflow-y-auto px-8 py-6">
+            {formError && (
+              <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-medium text-rose-600 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400">
+                {formError}
+              </div>
+            )}
+
             <div className="space-y-2">
               <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 {dict.title}
@@ -144,7 +226,10 @@ export function TodoDetailsDialog({
 
             <div className="space-y-1.5">
               <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                <ListTodo size={12} className="text-violet-500" /> Target Sprint / Backlog
+                <ListTodo size={12} className="text-violet-500" />{" "}
+                {isRtl
+                  ? "السبرنت المستهدف / الباكلوغ"
+                  : "Target Sprint / Backlog"}
               </label>
               <div className="relative">
                 <select
@@ -154,18 +239,20 @@ export function TodoDetailsDialog({
                       e.target.value === "backlog" ? null : e.target.value,
                     )
                   }
-                  className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-slate-50 pl-3 pr-8 text-xs font-bold text-slate-900 outline-none transition focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-slate-50 ps-3 pe-8 text-xs font-bold text-slate-900 outline-none transition focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                 >
-                  <option value="backlog">📦 Backlog (No Sprint)</option>
+                  <option value="backlog">
+                     {isRtl ? "الباكلوغ (بدون سبرنت)" : "Backlog (No Sprint)"}
+                  </option>
                   {sprints.map((s) => (
                     <option key={s.id} value={s.id}>
-                      🚀 {s.name} ({s.status})
+                       {s.name} ({s.status})
                     </option>
                   ))}
                 </select>
                 <ChevronDown
                   size={13}
-                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-slate-400"
                 />
               </div>
             </div>
@@ -181,7 +268,7 @@ export function TodoDetailsDialog({
                     onChange={(e) =>
                       setPriority(e.target.value as TodoPriority)
                     }
-                    className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-slate-50 pl-3 pr-8 text-xs font-bold capitalize text-slate-900 outline-none transition focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-slate-50 ps-3 pe-8 text-xs font-bold capitalize text-slate-900 outline-none transition focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                   >
                     {TODO_PRIORITIES.map((p) => (
                       <option key={p} value={p}>
@@ -191,7 +278,7 @@ export function TodoDetailsDialog({
                   </select>
                   <ChevronDown
                     size={13}
-                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-slate-400"
                   />
                 </div>
               </div>
@@ -204,7 +291,7 @@ export function TodoDetailsDialog({
                   <select
                     value={type}
                     onChange={(e) => setType(e.target.value as TodoType)}
-                    className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-slate-50 pl-3 pr-8 text-xs font-bold capitalize text-slate-900 outline-none transition focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-slate-50 ps-3 pe-8 text-xs font-bold capitalize text-slate-900 outline-none transition focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                   >
                     {TODO_TYPES.map((tp) => (
                       <option key={tp} value={tp}>
@@ -214,7 +301,7 @@ export function TodoDetailsDialog({
                   </select>
                   <ChevronDown
                     size={13}
-                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-slate-400"
                   />
                 </div>
               </div>
@@ -233,7 +320,7 @@ export function TodoDetailsDialog({
                           : (Number(e.target.value) as StoryPoints),
                       )
                     }
-                    className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-slate-50 pl-3 pr-8 text-xs font-bold text-slate-900 outline-none transition focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-slate-50 ps-3 pe-8 text-xs font-bold text-slate-900 outline-none transition focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                   >
                     <option value="">{dict.none}</option>
                     {STORY_POINTS.map((sp) => (
@@ -244,7 +331,7 @@ export function TodoDetailsDialog({
                   </select>
                   <ChevronDown
                     size={13}
-                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-slate-400"
                   />
                 </div>
               </div>
@@ -253,7 +340,8 @@ export function TodoDetailsDialog({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  <Calendar size={12} className="text-indigo-500" /> {dict.dueDate}
+                  <Calendar size={12} className="text-indigo-500" />{" "}
+                  {dict.dueDate}
                 </label>
                 <input
                   type="date"
@@ -265,13 +353,14 @@ export function TodoDetailsDialog({
 
               <div className="space-y-1.5">
                 <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  <CheckCircle2 size={12} className="text-indigo-500" /> {dict.status}
+                  <CheckCircle2 size={12} className="text-indigo-500" />{" "}
+                  {dict.status}
                 </label>
                 <div className="relative">
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value as TodoStatus)}
-                    className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-slate-50 pl-3 pr-8 text-xs font-bold capitalize text-slate-900 outline-none transition focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-slate-50 ps-3 pe-8 text-xs font-bold capitalize text-slate-900 outline-none transition focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                   >
                     <option value="todo">To Do</option>
                     <option value="in_progress">In Progress</option>
@@ -280,7 +369,7 @@ export function TodoDetailsDialog({
                   </select>
                   <ChevronDown
                     size={13}
-                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-slate-400"
                   />
                 </div>
               </div>
@@ -318,15 +407,6 @@ export function TodoDetailsDialog({
                   </strong>
                 </span>
               </div>
-              {todo.completedAt && (
-                <div className="flex items-center gap-2 border-t border-slate-200 pt-2 font-semibold text-emerald-600 dark:border-slate-800 dark:text-emerald-400">
-                  <CheckCircle2 size={11} className="shrink-0" />
-                  <span>
-                    {dict.completed}:{" "}
-                    {new Date(todo.completedAt).toLocaleString()}
-                  </span>
-                </div>
-              )}
             </div>
           </div>
 
@@ -335,7 +415,7 @@ export function TodoDetailsDialog({
             <Button
               variant="outline"
               size="sm"
-              onClick={onClose}
+              onClick={handleSafeClose}
               className="h-10 rounded-xl px-5 text-xs font-semibold cursor-pointer"
             >
               {dict.cancel}

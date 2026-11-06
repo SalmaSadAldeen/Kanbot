@@ -50,7 +50,7 @@ export function ProjectFormDialog(props: ProjectFormDialogProps) {
             label={t.projectsPage.dialog.keyLabel}
             placeholder={t.projectsPage.dialog.keyPlaceholder}
             maxLength={6}
-            disabled={isSaving} // تم إزالة isEditing لكي يسمح بتعديل المفتاح حسب متطلبات PRJ-3
+            disabled={isSaving}
             error={errors.key?.message}
             aria-describedby="project-key-hint"
             {...register("key", {
@@ -61,11 +61,14 @@ export function ProjectFormDialog(props: ProjectFormDialogProps) {
               },
             })}
           />
-          <p id="project-key-hint" className="mt-1 text-[11px] text-slate-400">
+          <p
+            id="project-key-hint"
+            className="mt-1 text-[11px] text-slate-400 dark:text-slate-500"
+          >
             {t.projectsPage.dialog.keyHint}
-            {/* التلميح يوضح أن تغيير المعرّف لا يغيّر مفاتيح المهام الموجودة */}
           </p>
         </div>
+
         <ProjectDescriptionField
           label={t.projectsPage.dialog.descLabel}
           placeholder={t.projectsPage.dialog.descPlaceholder}
@@ -78,23 +81,29 @@ export function ProjectFormDialog(props: ProjectFormDialogProps) {
 
         {errors.root?.message && (
           <p
-            className="text-sm font-medium text-red-600 dark:text-red-400"
+            className="text-sm font-medium text-rose-600 dark:text-rose-400"
             role="alert"
           >
             {errors.root.message}
           </p>
         )}
 
-        <div className="flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+        {/* أزرار الحفظ والإلغاء بألوان الهوية (Indigo) وخالية من الأسود */}
+        <div className="flex justify-end gap-2.5 border-t border-slate-100 pt-4 dark:border-slate-800">
           <Button
             type="button"
-            variant="secondary"
+            variant="outline"
             onClick={props.onClose}
             disabled={isSaving}
+            className="rounded-xl border-slate-200 bg-slate-50/50 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-300 dark:hover:bg-slate-800 cursor-pointer transition-all"
           >
             {t.projectsPage.dialog.cancel}
           </Button>
-          <Button type="submit" isLoading={isSaving}>
+          <Button
+            type="submit"
+            isLoading={isSaving}
+            className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-indigo-600/20 transition-all hover:bg-indigo-700 active:scale-95 dark:bg-indigo-600 dark:hover:bg-indigo-500 cursor-pointer"
+          >
             {isEditing
               ? t.projectsPage.dialog.save
               : t.projectsPage.dialog.create}

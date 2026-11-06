@@ -1,4 +1,4 @@
-import type { KeyboardEvent } from "react";
+import { useRef, useEffect, type KeyboardEvent } from "react";
 import { Plus } from "lucide-react";
 import { Spinner } from "../../../components/ui/Spinner";
 
@@ -23,6 +23,15 @@ export function QuickCreateBar({
   placeholder,
   hintText,
 }: QuickCreateBarProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // إعادة التركيز فور انتهاء عملية الإنشاء لتمكين الإدخال المتتالي السريع
+  useEffect(() => {
+    if (!isPending) {
+      inputRef.current?.focus();
+    }
+  }, [isPending]);
+
   return (
     <div className="border-t border-slate-100/80 bg-slate-50/60 p-3 dark:border-slate-800/40 dark:bg-slate-900/40">
       <div className="flex items-center gap-3 px-2">
@@ -30,6 +39,7 @@ export function QuickCreateBar({
           <Plus size={16} />
         </div>
         <input
+          ref={inputRef}
           value={quickTitle}
           onChange={(event) => setQuickTitle(event.target.value)}
           onKeyDown={onQuickKeyDown}

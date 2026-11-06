@@ -1,4 +1,13 @@
-import { Search, Sparkles, Activity, Plus, ChevronDown } from "lucide-react";
+import { useState, useEffect } from "react";
+import {
+  Search,
+  Sparkles,
+  Activity,
+  Plus,
+  ChevronDown,
+  GripVertical,
+  Keyboard,
+} from "lucide-react";
 import { Button } from "../../../components/ui/Button";
 import { TODO_PRIORITIES, TODO_TYPES } from "../../../types/api";
 import type { TodoPriority, TodoType } from "../../../types/api";
@@ -30,6 +39,7 @@ interface BacklogHeaderProps {
   totalTodos: number;
   totalPoints: number;
   onCreateSprint: () => void;
+  isRtl?: boolean;
 }
 
 export function BacklogHeader({
@@ -43,10 +53,32 @@ export function BacklogHeader({
   totalTodos,
   totalPoints,
   onCreateSprint,
+  isRtl = false,
 }: BacklogHeaderProps) {
   const openAiDialog = useAiUi((s) => s.openDialog);
+
+  // استخدام الـ Pattern الموصى به لتفادي تأثيرات الـ useEffect عند مزامنة الـ Props
+  const [searchValue, setSearchValue] = useState(search);
+  const [prevSearch, setPrevSearch] = useState(search);
+
+  if (search !== prevSearch) {
+    setPrevSearch(search);
+    setSearchValue(search);
+  }
+
+  // تطبيق الـ Debounce لمدة 300ms فقط عند الكتابة المحلية
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchValue !== search) {
+        setSearch(searchValue);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchValue, search, setSearch]);
+
   return (
-    <header className="space-y-5">
+    <header className="space-y-4">
       {/* ── العنوان العلوي مع لمسة جمالية متدرجة ── */}
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200/80 pb-6 dark:border-slate-800/80">
         <div className="min-w-0 space-y-1">
@@ -67,7 +99,20 @@ export function BacklogHeader({
             </span>
           </div>
         </div>
+      </div>
 
+      {/* ── شريط التوتوريال الإرشادي (السحب والإفلات والحركة عبر لوحة المفاتيح) ── */}
+      <div className="flex items-center gap-2.5 rounded-xl border border-indigo-100 bg-indigo-50/70 p-3 text-xs font-medium text-indigo-700 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-indigo-300">
+        <GripVertical size={16} className="shrink-0 text-indigo-500" />
+        <span>
+          {isRtl
+            ? "تلميح: اسحب وأفلت المهام لترتيبها، أو استخدم مفاتيح الأسهم (Space/Enter للإمساك وEscape للإلغاء) لسهولة الوصول."
+            : "Tip: Drag & drop tasks to reorder, or use keyboard arrows (Space/Enter to lift, Escape to cancel) for accessibility."}
+        </span>
+        <Keyboard
+          size={15}
+          className="ms-auto shrink-0 text-indigo-500 opacity-80"
+        />
       </div>
 
       {/* ── شريط البحث والفلاتر الفاخر ── */}
@@ -80,8 +125,8 @@ export function BacklogHeader({
               className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition-colors"
             />
             <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
               placeholder={copy.search}
               className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/70 ps-10 pe-4 text-xs font-semibold text-slate-900 outline-none transition-all duration-200 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-800"
             />

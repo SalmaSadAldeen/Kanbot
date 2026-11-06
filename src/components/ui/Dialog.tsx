@@ -42,6 +42,7 @@ export const Dialog: React.FC<DialogProps> = ({
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
@@ -65,9 +66,25 @@ export const Dialog: React.FC<DialogProps> = ({
       }
     };
     window.addEventListener("keydown", handleKeyDown);
-    closeButtonRef.current?.focus();
+
+    // التعديل الجذري هنا: بدلاً من التركيز على زر الإغلاق، نبحث عن أول input أو حقل كتابة ونعطيه الفوكس بلطف
+    const timer = setTimeout(() => {
+      if (panelRef.current) {
+        const firstInput = panelRef.current.querySelector<HTMLElement>(
+          "input:not([disabled]), textarea:not([disabled]), select:not([disabled])",
+        );
+        if (firstInput) {
+          firstInput.focus();
+        } else {
+          // إذا مافي حقل إدخال، بنترك التركيز عادي بدون إجبار زر الـ X
+          panelRef.current.focus();
+        }
+      }
+    }, 30);
+
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
+      clearTimeout(timer);
       triggerRef.current?.focus();
     };
   }, [disableCloseWhilePending, isOpen]);
@@ -96,7 +113,8 @@ export const Dialog: React.FC<DialogProps> = ({
       {/* Panel */}
       <div
         ref={panelRef}
-        className={`relative z-10 my-auto max-h-[calc(100dvh-1.5rem)] w-full overflow-y-auto ${maxWidthClasses[maxWidth]} rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-slate-900 sm:max-h-[calc(100dvh-2rem)] sm:p-6`}
+        tabIndex={-1}
+        className={`relative z-10 my-auto max-h-[calc(100dvh-1.5rem)] w-full overflow-y-auto ${maxWidthClasses[maxWidth]} rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-slate-900 sm:max-h-[calc(100dvh-2rem)] sm:p-6 outline-none`}
         style={{ animation: "dialogSlideIn 0.18s cubic-bezier(0.16,1,0.3,1)" }}
       >
         {/* Header */}
