@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { FolderKanban, Plus, Search } from "lucide-react";
+import toast from "react-hot-toast";
 import { useTranslation } from "../../store/useAppStore";
 import { Button } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/EmptyState";
@@ -10,6 +11,7 @@ import { useProjects } from "../../hooks/useProjects";
 import type { ProjectWithStats } from "../../types/api";
 import { ProjectFormDialog } from "./ProjectFormDialog";
 import { ProjectCard } from "./components/ProjectCard";
+import { SearchEmptyState } from "./components/SearchEmptyState";
 
 export function ProjectsPage() {
   const { t, isRtl } = useTranslation();
@@ -19,17 +21,29 @@ export function ProjectsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedProject, setSelectedProject] =
     useState<ProjectWithStats | null>(null);
+
+  // حالات الحذف
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [projectToDelete, setProjectToDelete] =
     useState<ProjectWithStats | null>(null);
   const [isDeletingActive, setIsDeletingActive] = useState(false);
+  const timeoutRef = useRef<number | null>(null);
 
+  // إعداد الـ Debounce للبحث (300ms)
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
 
   const filteredProjects = projects.filter((p) =>
     `${p.name} ${p.key} ${p.description ?? ""}`
       .toLowerCase()
-      .includes(searchQuery.toLowerCase()),
+      .includes(debouncedSearch.toLowerCase()),
   );
 
   const openCreate = () => {
@@ -41,22 +55,50 @@ export function ProjectsPage() {
     setIsFormOpen(true);
   };
 
-  const confirmDelete = async () => {
+  // 1. عند الضغط على حذف: الكارد تظل مكانها ويتغير بوردر الكارد نفسها للبرتقالي مع ظهور زر التراجع بداخلها
+  const handleDeleteClick = (project: ProjectWithStats) => {
+    setDeletingId(project.id);
+    if (timeoutRef.current !== null) {
+      window.clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = window.setTimeout(() => {
+      setDeletingId(null);
+      setProjectToDelete(project); // بعد انتهاء المهلة يفتح ديالوغ التأكيد
+    }, 4000);
+  };
+
+  // 2. التراجع عن الحذف
+  const handleUndoClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (timeoutRef.current !== null) {
+      window.clearTimeout(timeoutRef.current);
+    }
+    setDeletingId(null);
+  };
+
+  // 3. التأكيد النهائي من الديالوغ وحذف المشروع مع إظهار توست النجاح مرة واحدة فقط
+  const handleConfirmDelete = async () => {
     if (!projectToDelete) return;
     setIsDeletingActive(true);
-    setDeletingId(projectToDelete.id);
     try {
       await deleteProject(projectToDelete.id);
+
       setProjectToDelete(null);
     } finally {
       setIsDeletingActive(false);
-      setDeletingId(null);
     }
   };
 
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current !== null) {
+        window.clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6">
-      {/* Top Header */}
       {/* Top Header */}
       <header className="flex items-center justify-between border-b border-slate-200 pb-5 dark:border-slate-800">
         <div className="flex items-baseline gap-3">
@@ -76,7 +118,7 @@ export function ProjectsPage() {
         </Button>
       </header>
 
-      {/* Global Projects Search Input */}
+      {/* Global Projects Search Input (Debounced) */}
       <div className="max-w-md">
         <div className="relative">
           <Search
@@ -113,7 +155,6 @@ export function ProjectsPage() {
           </Button>
         </div>
       ) : projects.length === 0 ? (
-        /* Empty State Component */
         <EmptyState
           title={t.projectsPage.emptyTitle}
           description={t.projectsPage.emptyDesc}
@@ -133,18 +174,23 @@ export function ProjectsPage() {
             </Button>
           }
         />
+      ) : filteredProjects.length === 0 ? (
+        <SearchEmptyState onClear={() => setSearchQuery("")} />
       ) : (
-        /* Projects Grid + Dashed Add Button */
         <section className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {filteredProjects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              isDeleting={deletingId === project.id}
-              onEdit={openEdit}
-              onDelete={setProjectToDelete}
-            />
-          ))}
+          {filteredProjects.map((project) => {
+            const isPending = deletingId === project.id;
+            return (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                isDeleting={isPending}
+                onEdit={openEdit}
+                onDelete={() => handleDeleteClick(project)}
+                onUndo={handleUndoClick}
+              />
+            );
+          })}
 
           {/* New Project Dashed Card */}
           <button
@@ -167,6 +213,7 @@ export function ProjectsPage() {
         projectToEdit={selectedProject}
       />
 
+      {/* ديولوج التأكيد النهائي للحذف */}
       <Dialog
         isOpen={!!projectToDelete}
         onClose={() => !isDeletingActive && setProjectToDelete(null)}
@@ -189,7 +236,7 @@ export function ProjectsPage() {
             </Button>
             <Button
               variant="danger"
-              onClick={() => void confirmDelete()}
+              onClick={() => void handleConfirmDelete()}
               disabled={isDeletingActive}
             >
               {isDeletingActive ? (

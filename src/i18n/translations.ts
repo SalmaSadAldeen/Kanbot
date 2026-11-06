@@ -43,7 +43,11 @@ export const translations = {
     footer: "Kanbot v1.0.0 © 2026",
     projectsPage: {
       workspace: "Workspace",
+      clearSearch: "Clear search",
+      searchEmptyDesc: "No projects match your search query",
+      searchEmptyTitle: "No projects found",
       title: "Projects",
+
       subtitle:
         "Organize your software projects, sprints, and track task progress.",
       newProject: "New Project",
@@ -412,6 +416,9 @@ export const translations = {
     projectsPage: {
       workspace: "مساحة العمل",
       title: "المشاريع",
+      clearSearch: "مسح البحث",
+      searchEmptyTitle: "لم يتم العثور على أي مشاريع",
+      searchEmptyDesc: "لا توجد مشاريع تطابق بحثك. جرب البحث عن كلمة أخرى.",
       subtitle: "نظّم مشاريعك البرمجيّة، السبرنتات، وتابع تقدم العمل.",
       newProject: "مشروع جديد",
       stats: {
