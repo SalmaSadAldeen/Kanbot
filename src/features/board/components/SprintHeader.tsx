@@ -164,7 +164,7 @@ export function SprintHeader({
               {/* تنبيه إذا كان هناك مهام غير منتهية */}
               {unfinishedTodos > 0 && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60">
-                  ⚠️ {unfinishedTodos} unfinished tasks will move to backlog
+                  ⚠️ {bd.unfinishedWarning.replace("{n}", String(unfinishedTodos))}
                 </span>
               )}
             </div>

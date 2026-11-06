@@ -232,6 +232,11 @@ export const translations = {
         pts: "pts",
         done: "done",
         active: "Active",
+        /** Shown as a warning chip in the sprint header when unfinished todos exist */
+        unfinishedWarning: "{n} unfinished task(s) will move on sprint complete",
+        /** Drag-and-drop screen reader announcement */
+        dragPickedUp: "Card picked up",
+        dragMovedTo: "moved to",
       },
       sprintsPage: {
         title: "Sprints",
@@ -492,6 +497,9 @@ export const translations = {
         pts: "نقطة",
         done: "مكتمل",
         active: "نشط",
+        unfinishedWarning: "{n} مهمة غير منتهية ستنتقل عند إكمال السبرنت",
+        dragPickedUp: "تم رفع البطاقة",
+        dragMovedTo: "نُقلت إلى",
       },
       sprintsPage: {
         title: "السبرنتات",

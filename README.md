@@ -1,134 +1,177 @@
-<!-- # React + TypeScript + Vite
+# Kanbot Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Kanbot is a sprint planning and backlog management app designed for personal and small-team agile workflows. The client is a React + TypeScript interface for creating projects, managing backlog work, planning sprints, tracking an active sprint board, and interacting with an AI assistant while keeping the experience bilingual and theme-aware.
 
-Currently, two official plugins are available:
+## Project overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+The app follows a Jira-inspired enterprise layout with:
 
-## React Compiler
+- A persistent app shell and navigation
+- Project-based workspaces
+- Backlog management with inline creation and rich detail dialogs
+- Sprint planning and board tracking
+- AI-driven backlog generation and sprint planning
+- Bidirectional English/Arabic localization
+- Light/dark visual themes with persistence
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+This frontend is intentionally structured around a clean architecture to avoid prop drilling and keep state concerns centralized.
 
-## Expanding the ESLint configuration
+## Architecture
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 1. Application structure
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```text
+src/
+  api/            # HTTP helpers for auth, projects, sprints, AI, todos
+  components/     # shared UI primitives and shell layout
+  features/       # feature modules: auth, projects, backlog, sprint, board, ai
+  hooks/          # domain-specific hooks over TanStack Query
+  i18n/           # EN/AR translation catalog
+  store/          # Zustand stores for app-wide settings
+  types/          # shared API typings
+  router.tsx      # route table and guards
+  main.tsx        # app bootstrap
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Zero Prop Drilling pattern
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+The client avoids passing shared state down through many React component layers by using:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- Zustand stores for global app state such as language, theme, and sidebar behavior
+- TanStack Query hooks for server state, cache synchronization, and optimistic updates
+- Feature-level hooks that encapsulate queries, mutations, and derived logic
+- Route-level and provider-level composition instead of threading props through unrelated components
 
+This keeps the UI easier to maintain and prevents local state from becoming tightly coupled to unrelated screens.
+
+### 3. State and data flow
+
+- Global UI settings live in `src/store/useAppStore.ts`
+- Feature data is managed through hooks in `src/hooks/`
+- API communication is isolated in `src/api/`
+- Pages and dialogs consume the hooks and stores instead of receiving large prop trees
+- Route guards in `src/features/auth/` protect public and authenticated flows
+
+### 4. i18n: EN/AR support
+
+The app ships with a complete translation catalog in `src/i18n/translations.ts` and a language store that persists the selected language.
+
+Key characteristics:
+
+- `en` and `ar` are both supported
+- The document direction is set with `dir` and `lang` on `document.documentElement`
+- RTL layouts are applied automatically for Arabic
+- UI strings, button labels, validation messages, and contextual text all use the shared translation object
+
+### 5. Dark mode
+
+Dark mode is implemented in the app store and applied globally via the `dark` class on the root element.
+
+Behavior:
+
+- Theme preference is persisted locally
+- Light and dark classes are toggled centrally
+- The theme is applied before rendering completes for a consistent experience
+- The design system uses dark Tailwind variants to keep contrast and accessibility in check
+
+## Tech stack
+
+- React 19
+- TypeScript
+- Vite
+- React Router
+- TanStack Query
+- Zustand
+- Tailwind CSS
+- Lucide React
+- Zod validation
+
+## Setup instructions
+
+### Prerequisites
+
+- Node.js 18+ recommended
+- npm
+- A running Kanbot backend on the local API server (see the server project README)
+
+### Install dependencies
+
+```bash
+cd client
+npm install
 ```
 
- -->
+### Start in development mode
 
-# Kanbot Frontend (Client)
+```bash
+cd client
+npm run dev
+```
 
-Kanbot is a personal Agile project management application (Kanban + Bot) designed for a single user, featuring sprint planning, a task backlog, an active sprint board, and a smart AI assistant.
+The client expects the API server to be available at the configured local backend endpoint.
 
----## 🚀 Tech Stack & Design Choices
+### Production build
 
-- **Framework:** React 19 + TypeScript (Strict Mode) + Vite.
-- **Routing:** React Router v7 with protected routes (`ProtectedRoute`) and guest route guards (`GuestRoute`).
-- **Server State Management:** TanStack Query (`@tanstack/react-query`) for caching, optimistic updates, and background data fetching.
-- **Styling & UI:** Tailwind CSS for a modern, responsive enterprise design inspired by Jira.
-- **State Management:** Zustand (`useAppStore`) for persistent theme switching (Dark/Light mode) and global UI toggles.
-- **Icons:** `lucide-react`.
+```bash
+cd client
+npm run build
+```
 
----
+### Linting
 
-## ✨ Implemented Features (Day 1, Day 2 & Day 3 - Sprints & Backlog)
+```bash
+cd client
+npm run lint
+```
 
-### 1. Authentication & Security (AUTH-1 to AUTH-6)
+## Requirements compliance summary
 
-- **Register & Login:** Complete client-side validation, server validation display (`details[]`), duplicate email handling (409 Conflict), and loading states.
-- **Session Persistence & Auto-Fetch:** Preserves JWT token in `localStorage`, verifies token status via `GET /auth/me` on startup with full-page initialization loader.
-- **Session Expiration:** Intercepts `401 Unauthorized` responses on API requests and safely redirects expired sessions to `/login?redirect=...&expired=1` with feedback.
-- **Log Out:** Confirmation dialog modal (`ConfirmDialog`) before clearing `localStorage` token and invalidating TanStack Query cache.
+The client implements the core application requirements around project, backlog, sprint, localization, and accessibility-focused UX.
 
-### 2. Enterprise Jira-Style Layout & AppShell (PRJ-1 to PRJ-5)
+### PRJ — Project management
 
-- **Full-Width Topbar:** Houses the sidebar collapse toggle, Kanbot branding, dynamic Jira-style **ProjectSwitcher**, language switcher, dark/light theme toggle, user badge, and direct Log Out button.
-- **Fixed Sidebar:** Seamlessly positioned below the Topbar, maintaining stable navigation links (`Dashboard`, `Projects`, `My Tasks`, `Settings`).
-- **Project Switcher:** Custom Jira-style dropdown with project search filtering (`/` shortcut), key badges, and Esc key dismissal.
-- **Project Management:** Project listing page with cards, empty states, creation/edit modals (handles key 409 conflicts), and delete confirmation dialogs.
+- Project list view
+- Create, edit, and delete flows
+- Active project switching and navigation
+- Empty and error states for project management
 
-### 3. Sprints & Backlog Management (SPR-1 to SPR-3)
+### BL — Backlog and todo management
 
-- **Sprints & Backlog Integration:** Full management of product backlog items, task creation, and sprint organization.
-- **Start Sprint Feature (SPR-3):**
-  - Interactive configuration dialog (`StartSprintDialog`) with automatic date selection (defaults to today + 14 days).
-  - Robust active sprint validation checking (`409 Conflict` prevention).
-  - Dynamic button disabling with clear warning tooltips (`activeSprintWarning`) when another sprint is already active.
-  - Automatic navigation to the project Board view upon successful sprint initiation.
-- **Internationalization (i18n):** Complete bilingual support (English & Arabic) for all new dialogs, buttons, and error messages via `translations.ts`.
+- Backlog listing with counts and totals
+- Quick create workflow
+- Todo detail dialogs and editing flow
+- Delete and mutate flows
+- Search and filtering experience
+- Sprint and backlog organization logic
 
-### 4. Polish & Bonus UX Improvements (§9)
+### i18n
 
-- **Dark Mode Persistence:** Automatically syncs preference with `localStorage` and applies the `dark` class to `document.documentElement` without layout flash.
-- **Global Keyboard Shortcuts:** Supports `Esc` for dialog closing and `/` for fast project search focus.
-- **Zero Layout Shift:** Smooth layout transitions and clean responsiveness across mobile, tablet, and desktop viewports.
+- Language toggle between English and Arabic
+- UI text drawn from a centralized translation table
+- RTL orientation support for Arabic
+- Localized common actions, errors, and labels
 
----
+### Dark mode
 
-## 🛠️ How to Run
+- Theme toggle persisted across sessions
+- Root-level dark class applied globally
+- Dark-mode-friendly surface styling across shared UI
 
-1. Ensure the backend server is running on `http://localhost:4000/api` (refer to `server/README.md`).
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+### Zero Prop Drilling
+
+- Shared app state centralized in Zustand
+- Query and mutation flows centralized behind hooks
+- Feature modules remain decoupled and easier to extend
+
+## Notes
+
+This repository is structured as a full-stack project:
+
+- `client/` contains the React frontend
+- `server/` contains the Express + TypeScript API and data layer
+
+The frontend README is intentionally focused on the client-side architecture and quality standards for the Kanbot product.
+
+## Implementation status
+
+This client includes the project and backlog implementation, the bilingual interface, dark mode support, and the zero-prop-drilling architecture needed for the Kanbot workflow.

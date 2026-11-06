@@ -98,7 +98,7 @@ export function BoardPage() {
   function handleDragStart(event: DragStartEvent) {
     const todo = (event.active.data.current as { todo?: Todo })?.todo;
     setActiveDragTodo(todo ?? null);
-    if (todo) setDragAnnouncement(`${todo.key} picked up`);
+    if (todo) setDragAnnouncement(`${todo.key} — ${board.dragPickedUp}`);
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -122,7 +122,7 @@ export function BoardPage() {
         position,
         sprintId: draggedTodo.sprintId ?? undefined,
       });
-      setDragAnnouncement(`${draggedTodo.key} moved to ${board.columns[targetStatus]}`);
+      setDragAnnouncement(`${draggedTodo.key} ${board.dragMovedTo} ${board.columns[targetStatus]}`);
       return;
     }
 
@@ -162,7 +162,7 @@ export function BoardPage() {
       position,
       sprintId: draggedTodo.sprintId ?? undefined,
     });
-    setDragAnnouncement(`${draggedTodo.key} moved to ${board.columns[targetColStatus]}`);
+    setDragAnnouncement(`${draggedTodo.key} ${board.dragMovedTo} ${board.columns[targetColStatus]}`);
   }
 
   // 7. Complete sprint confirmation handler
