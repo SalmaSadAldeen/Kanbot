@@ -9,6 +9,7 @@ import {
   Sparkles,
   RotateCcw,
   Clock,
+  Layers,
 } from "lucide-react";
 import type { Sprint, Todo, StartSprintRequest } from "../../../types/api";
 import { useTranslation } from "../../../store/useAppStore";
@@ -119,6 +120,7 @@ export function SprintHeader({
 
   const workItemsCount = todos.length;
   const workItemsText = `${workItemsCount} work item${workItemsCount !== 1 ? "s" : ""}`;
+  const totalPoints = stats.totalPoints ?? 0;
 
   return (
     <>
@@ -157,8 +159,14 @@ export function SprintHeader({
                 </span>
               )}
 
-              <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
-                ({workItemsText})
+              {/* عدد المهام ومجموع النقاط الظاهرة بوضوح */}
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-200/50 dark:bg-slate-800/60 px-2 py-0.5 rounded-md">
+                <span>{workItemsText}</span>
+                <span className="text-slate-300 dark:text-slate-600">•</span>
+                <span className="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 font-bold">
+                  <Layers size={12} />
+                  {totalPoints} pts
+                </span>
               </span>
             </div>
 
@@ -191,7 +199,7 @@ export function SprintHeader({
                   {stats.byStatus?.["todo"] ?? 0}
                 </span>
                 <span
-                  title="In Progress"
+                  title="In Progress / In Review"
                   className="flex h-6 min-w-6 items-center justify-center rounded-md bg-blue-600 px-1.5 text-white"
                 >
                   {(stats.byStatus?.["in_progress"] ?? 0) +

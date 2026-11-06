@@ -1,4 +1,4 @@
-import { Sparkles, Calendar, CheckCircle2, Play } from "lucide-react";
+import { Sparkles, Calendar, CheckCircle2 } from "lucide-react";
 import { Button } from "../../../components/ui/Button";
 import type { Sprint } from "../../../types/api";
 import { useAiUi } from "../../../store/useAiUi";
@@ -19,38 +19,41 @@ interface SprintsCopy {
 
 interface SprintDetailsCardProps {
   currentSprint: Sprint | null;
-  allSprints: Sprint[]; // أضفنا قائمة كل السبرنتات لنفحص هل يوجد سبرنت نشط مسبقاً
+  allSprints: Sprint[];
   sCopy: SprintsCopy;
-  onStart: (sprintId: string) => void;
+  onStart?: (sprintId: string) => void;
   onOpenCompleteModal: () => void;
   onRegenerateSummary?: () => void;
 }
 
 export function SprintDetailsCard({
   currentSprint,
-  allSprints,
   sCopy,
-  onStart,
   onOpenCompleteModal,
 }: SprintDetailsCardProps) {
   const openSummary = useAiUi((s) => s.openSummary);
+
   if (!currentSprint) {
     return (
-      <div className="flex min-h-[300px] items-center justify-center rounded-2xl border border-slate-200 bg-white p-6 text-slate-400 text-xs dark:border-slate-800 dark:bg-slate-900">
-        {sCopy.selectSprint}
+      <div className="flex min-h-[360px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400 mb-3">
+          <Calendar size={22} />
+        </div>
+        <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
+          {sCopy.selectSprint}
+        </p>
+        <p className="mt-1 text-xs text-slate-400">
+          اختر سبرنتاً من القائمة لعرض تفاصيله وإحصائياته.
+        </p>
       </div>
     );
   }
 
-  // التحقق هل يوجد سبرنت نشط آخر حالياً في المشروع
-  const hasActiveSprint = allSprints.some((s) => s.status === "active");
-
+  // حساب نسبة الإكمال (إما من completedStats إن وجدت أو من الإحصائيات الحالية)
+  const stats = currentSprint.completedStats ?? currentSprint.stats;
   const completionPercentage =
-    currentSprint.stats.totalTodos > 0
-      ? Math.round(
-          (currentSprint.stats.doneTodos / currentSprint.stats.totalTodos) *
-            100,
-        )
+    stats.totalTodos > 0
+      ? Math.round((stats.doneTodos / stats.totalTodos) * 100)
       : 0;
 
   return (
@@ -62,7 +65,15 @@ export function SprintDetailsCard({
             <h2 className="text-xl font-black text-slate-900 dark:text-slate-100">
               {currentSprint.name}
             </h2>
-            <span className="inline-flex items-center rounded-md border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-bold uppercase text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            <span
+              className={`inline-flex items-center rounded-md px-2.5 py-0.5 text-[11px] font-bold uppercase ${
+                currentSprint.status === "active"
+                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+                  : currentSprint.status === "completed"
+                    ? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
+                    : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
+              }`}
+            >
               {currentSprint.status}
             </span>
           </div>
@@ -79,34 +90,14 @@ export function SprintDetailsCard({
           </p>
         </div>
 
-        {/* أزرار الإجراءات */}
+        {/* زر إكمال السبرنت يظهر فقط إذا كان السبرنت نشطاً */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* زر البدء يظهر فقط إذا كان السبرنت مخططاً ولم يكن هناك سبرنت نشط آخر */}
-          {currentSprint.status === "planned" && !hasActiveSprint && (
-            <Button
-              size="sm"
-              onClick={() => onStart(currentSprint.id)}
-              leftIcon={<Play size={14} className="shrink-0" />}
-              className="text-xs font-bold cursor-pointer"
-            >
-              {sCopy.startSprint}
-            </Button>
-          )}
-
-          {/* إذا كان هناك سبرنت نشط ومحاولة بدء سبرنت جديد، نظهر ملاحظة أو نخفي الزر */}
-          {currentSprint.status === "planned" && hasActiveSprint && (
-            <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1.5 rounded-lg border border-amber-200 dark:border-amber-800">
-              Complete active sprint first
-            </span>
-          )}
-
           {currentSprint.status === "active" && (
             <Button
               size="sm"
               onClick={onOpenCompleteModal}
-              // تمرير الأيقونة حصرياً عبر leftIcon وضبط الكلاسات الأساسية للزر
               leftIcon={<CheckCircle2 size={14} className="shrink-0" />}
-              className="text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+              className="text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer rounded-xl px-4"
             >
               {sCopy.completeSprint}
             </Button>
@@ -114,14 +105,14 @@ export function SprintDetailsCard({
         </div>
       </div>
 
-      {/* بقية الإحصائيات وملخص الـ AI */}
+      {/* بطاقات الإحصائيات الأربعة */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-800/50">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
             {sCopy.completedTodos}
           </span>
           <p className="mt-1 text-xl font-black text-slate-900 dark:text-slate-100">
-            {currentSprint.stats.doneTodos} / {currentSprint.stats.totalTodos}
+            {stats.doneTodos} / {stats.totalTodos}
           </p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-800/50">
@@ -129,7 +120,7 @@ export function SprintDetailsCard({
             {sCopy.pointsDone}
           </span>
           <p className="mt-1 text-xl font-black text-slate-900 dark:text-slate-100">
-            {currentSprint.stats.donePoints} / {currentSprint.stats.totalPoints}
+            {stats.donePoints} / {stats.totalPoints}
           </p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-800/50">
@@ -150,6 +141,7 @@ export function SprintDetailsCard({
         </div>
       </div>
 
+      {/* ملخص الذكاء الاصطناعي */}
       <div className="rounded-2xl border border-slate-200 bg-slate-50/40 p-5 dark:border-slate-800 dark:bg-slate-900/40 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -162,7 +154,7 @@ export function SprintDetailsCard({
             onClick={() => openSummary(currentSprint.id)}
             variant="outline"
             size="sm"
-            className="h-8 text-[11px] font-semibold gap-1.5 cursor-pointer inline-flex items-center"
+            className="h-8 text-[11px] font-semibold gap-1.5 cursor-pointer inline-flex items-center rounded-xl"
           >
             <Sparkles size={12} className="shrink-0" />
             <span>{sCopy.regenerate}</span>

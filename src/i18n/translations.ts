@@ -260,6 +260,12 @@ export const translations = {
         regenerate: "Regenerate",
         noSummary: "No AI summary generated for this sprint yet.",
         selectSprint: "Select a sprint to view details",
+        loadError: "Failed to load sprints",
+        loadErrorDesc:
+          "An error occurred while fetching sprints. Please try again or go to backlog.",
+        noSprints: "No sprints yet",
+        noSprintsDesc: "You can create and plan new sprints in the Backlog.",
+        createInBacklog: "Go to Backlog to create sprint",
         completeModal: {
           title: "Complete Sprint",
           description:
@@ -626,6 +632,13 @@ export const translations = {
         regenerate: "إعادة توليد",
         noSummary: "لم يتم إنشاء ملخص ذكاء اصطناعي لهذا السبرنت بعد.",
         selectSprint: "اختر سبرنت لعرض التفاصيل",
+        loadError: "تعذر تحميل السبرنتات",
+        loadErrorDesc:
+          "حدث خطأ أثناء جلب السبرنتات، يرجى المحاولة لاحقاً أو الانتقال لصفحة الباكلوغ.",
+        noSprints: "لا توجد سبرنتات بعد",
+        noSprintsDesc:
+          "يمكنك إنشاء وتخطيط السبرنتات الجديدة وإضافة المهام إليها بسهولة من صفحة الباكلوغ.",
+        createInBacklog: "الذهاب إلى الباكلوغ لإنشاء سبرنت",
         completeModal: {
           title: "إكمال السبرنت",
           description:

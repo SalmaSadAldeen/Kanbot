@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { Calendar } from "lucide-react";
+import { Calendar, Plus, Layers, AlertCircle } from "lucide-react";
 import { useSprints } from "../../hooks/useSprints";
 import { Spinner } from "../../components/ui/Spinner";
+import { Button } from "../../components/ui/Button";
 import { CompleteSprintDialog } from "./components/CompleteSprintDialog";
 import { SprintDetailsCard } from "./components/SprintDetailsCard";
 import { useTranslation } from "../../store/useAppStore";
@@ -18,15 +19,17 @@ export function SprintsPage() {
   const sCopy = t.projectsPage.sprintsPage;
   const summarizeSprint = useSprintSummary();
 
-  const { allSprints, isLoading, error, startSprint, completeSprint } =
+  const { allSprints, isLoading, error, completeSprint } =
     useSprints(projectId);
 
   const [selectedSprintId, setSelectedSprintId] = useState<string | null>(null);
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
 
+  // تحديد السبرنت المختار بدقة، وعدم اختيار سبرنت عشوائي إذا كان الـ ID بالرابط غير صحيح
   const currentSprint =
-    allSprints.find((s) => s.id === selectedSprintId) ??
-    allSprints.find((s) => s.id === sprintId) ?? allSprints[0] ?? null;
+    allSprints.find((s) => s.id === (selectedSprintId || sprintId)) ??
+    (!sprintId && allSprints.length > 0 ? allSprints[0] : null);
+
   const plannedSprints = allSprints.filter((s) => s.status === "planned");
 
   if (isLoading) {
@@ -37,15 +40,40 @@ export function SprintsPage() {
     );
   }
 
-  if (error) {
+  // حالة الخطأ أو عدم توفر سبرنتات (Empty State موطّنة ومترجمة بالكامل)
+  if (error || allSprints.length === 0) {
     return (
-      <div className="p-6 text-rose-500 text-xs">Failed to load sprints.</div>
+      <div className="mx-auto w-full max-w-4xl px-4 py-12">
+        <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 shadow-inner dark:bg-indigo-950/60 dark:text-indigo-400 mb-4">
+            {error ? <AlertCircle size={32} /> : <Layers size={32} />}
+          </div>
+
+          <h2 className="text-lg font-black text-slate-900 dark:text-slate-100">
+            {error
+              ? (sCopy.loadError ?? "Failed to load sprints")
+              : (sCopy.noSprints ?? "No sprints yet")}
+          </h2>
+
+          <p className="mt-1.5 max-w-md text-xs font-medium text-slate-500 dark:text-slate-400 leading-relaxed">
+            {error
+              ? (sCopy.loadErrorDesc ??
+                "An error occurred while fetching sprints. Please try again or go to backlog.")
+              : (sCopy.noSprintsDesc ??
+                "You can create and plan new sprints in the Backlog.")}
+          </p>
+
+          <Button
+            onClick={() => navigate(`/projects/${projectId}/backlog`)}
+            className="mt-6 rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-700 cursor-pointer transition-all"
+            leftIcon={<Plus size={16} />}
+          >
+            {sCopy.createInBacklog ?? t.projectsPage.backlogPage.createSprint}
+          </Button>
+        </div>
+      </div>
     );
   }
-
-  const handleStart = async (sprintId: string) => {
-    await startSprint.mutateAsync({ sprintId, data: {} });
-  };
 
   const handleCompleteConfirm = async (
     targetSprintId: string | null,
@@ -67,8 +95,8 @@ export function SprintsPage() {
       try {
         await summarizeSprint.mutateAsync(currentSprint.id);
         toast.success(t.ai.summaryReady);
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : t.ai.summaryFailed);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : t.ai.summaryFailed);
       }
     }
     navigate(`/projects/${projectId}/sprints/${currentSprint.id}`);
@@ -86,6 +114,15 @@ export function SprintsPage() {
             {allSprints.length} {sCopy.totalSprints}
           </p>
         </div>
+        <Button
+          onClick={() => navigate(`/projects/${projectId}/backlog`)}
+          variant="outline"
+          size="sm"
+          className="rounded-xl border-slate-200 bg-slate-50/50 text-xs font-bold text-indigo-600 hover:bg-indigo-50 dark:border-slate-700 dark:bg-slate-800/50 dark:text-indigo-400 cursor-pointer"
+          leftIcon={<Plus size={14} />}
+        >
+          {sCopy.createInBacklog ?? t.projectsPage.backlogPage.createSprint}
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
@@ -100,7 +137,10 @@ export function SprintsPage() {
               return (
                 <div
                   key={sprint.id}
-                  onClick={() => setSelectedSprintId(sprint.id)}
+                  onClick={() => {
+                    setSelectedSprintId(sprint.id);
+                    navigate(`/projects/${projectId}/sprints/${sprint.id}`);
+                  }}
                   className={`cursor-pointer rounded-2xl border p-4 transition-all duration-200 ${
                     isSelected
                       ? "border-indigo-600 bg-indigo-50/20 shadow-md dark:border-indigo-500 dark:bg-indigo-950/20"
@@ -145,7 +185,6 @@ export function SprintsPage() {
             currentSprint={currentSprint}
             sCopy={sCopy}
             allSprints={allSprints}
-            onStart={handleStart}
             onOpenCompleteModal={() => setIsCompleteModalOpen(true)}
           />
         </div>
