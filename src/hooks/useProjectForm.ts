@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useProjects } from "../hooks/useProjects";
 import { useTranslation } from "../store/useAppStore";
@@ -41,14 +41,14 @@ export function useProjectForm({
     handleSubmit,
     reset,
     setError,
-    watch,
+    control,
     formState: { errors },
   } = useForm<ProjectFormData>({
     resolver: zodResolver(schema),
     defaultValues: { name: "", key: "", description: "" },
   });
 
-  const descriptionValue = watch("description") ?? "";
+  const descriptionValue = useWatch({ control, name: "description" }) ?? "";
 
   useEffect(() => {
     if (isOpen) {

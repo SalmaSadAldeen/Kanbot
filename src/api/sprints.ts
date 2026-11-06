@@ -17,6 +17,11 @@ export async function getProjectSprints(projectId: string): Promise<Sprint[]> {
   return data.sprints;
 }
 
+export async function getSprint(sprintId: string): Promise<Sprint> {
+  const data = await request<{ sprint: Sprint }>("GET", `/sprints/${sprintId}`);
+  return data.sprint;
+}
+
 // إنشاء سبرنت جديد (SPR-1)
 export async function createSprint(
   projectId: string,

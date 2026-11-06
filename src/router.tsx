@@ -41,6 +41,7 @@ export const router = createBrowserRouter([
             path: "/projects/:projectId/sprints",
             element: <SprintsPage />,
           },
+          { path: "/projects/:projectId/sprints/:sprintId", element: <SprintsPage /> },
           { path: "/settings", element: <div className="p-4">Settings</div> },
         ],
       },

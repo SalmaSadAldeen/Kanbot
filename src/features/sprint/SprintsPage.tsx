@@ -1,18 +1,22 @@
 import { useState } from "react";
-import { useParams } from "react-router";
-import { Sparkles, Calendar } from "lucide-react";
+import { useNavigate, useParams } from "react-router";
+import { Calendar } from "lucide-react";
 import { useSprints } from "../../hooks/useSprints";
 import { Spinner } from "../../components/ui/Spinner";
-import { Button } from "../../components/ui/Button";
 import { CompleteSprintDialog } from "./components/CompleteSprintDialog";
 import { SprintDetailsCard } from "./components/SprintDetailsCard";
 import { useTranslation } from "../../store/useAppStore";
 import type { CompleteSprintRequest } from "../../types/api";
+import { useSprintSummary } from "../../hooks/useAi";
+import toast from "react-hot-toast";
 
 export function SprintsPage() {
   const { projectId } = useParams<{ projectId: string }>();
+  const { sprintId } = useParams<{ sprintId?: string }>();
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const sCopy = t.projectsPage.sprintsPage;
+  const summarizeSprint = useSprintSummary();
 
   const { allSprints, isLoading, error, startSprint, completeSprint } =
     useSprints(projectId);
@@ -21,7 +25,8 @@ export function SprintsPage() {
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
 
   const currentSprint =
-    allSprints.find((s) => s.id === selectedSprintId) ?? allSprints[0] ?? null;
+    allSprints.find((s) => s.id === selectedSprintId) ??
+    allSprints.find((s) => s.id === sprintId) ?? allSprints[0] ?? null;
   const plannedSprints = allSprints.filter((s) => s.status === "planned");
 
   if (isLoading) {
@@ -56,10 +61,17 @@ export function SprintsPage() {
       sprintId: currentSprint.id,
       data: requestData,
     });
+    setIsCompleteModalOpen(false);
 
     if (generateSummary) {
-      console.log("Generating AI summary for completed sprint...");
+      try {
+        await summarizeSprint.mutateAsync(currentSprint.id);
+        toast.success(t.ai.summaryReady);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : t.ai.summaryFailed);
+      }
     }
+    navigate(`/projects/${projectId}/sprints/${currentSprint.id}`);
   };
 
   return (
@@ -74,14 +86,6 @@ export function SprintsPage() {
             {allSprints.length} {sCopy.totalSprints}
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2 text-xs font-semibold cursor-pointer inline-flex items-center"
-        >
-          <Sparkles size={14} className="text-indigo-500 shrink-0" />
-          <span>{sCopy.askAi}</span>
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">

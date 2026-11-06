@@ -50,9 +50,8 @@ export function CompleteSprintDialog({
       title={`Complete ${activeSprint.name}`}
     >
       <div className="space-y-4 py-2">
-        <p className="text-xs text-slate-600 dark:text-slate-400">
-          This sprint has unfinished tasks. Where would you like to move them?
-        </p>
+        <p className="text-xs text-slate-600 dark:text-slate-400">Done: {activeSprint.stats.doneTodos} · Not done: {activeSprint.stats.totalTodos - activeSprint.stats.doneTodos}</p>
+        {activeSprint.stats.totalTodos > activeSprint.stats.doneTodos && <p className="text-xs text-slate-600 dark:text-slate-400">This sprint has unfinished tasks. Where would you like to move them?</p>}
 
         <div className="space-y-1.5">
           <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">

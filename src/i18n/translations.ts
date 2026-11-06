@@ -261,6 +261,9 @@ export const translations = {
         },
       },
     },
+    ai: {
+      title: "AI assistant", ask: "Ask AI", createTodos: "Create todos", generateWithAi: "Generate with AI", planSprint: "Plan sprint", summarize: "Summarize sprint", newChat: "New chat", close: "Close AI assistant", mock: "Mock AI", thinking: "Thinking…", send: "Send message", messagePlaceholder: "Ask about this project…", disclaimer: "AI can make mistakes. Review before saving.", tryAgain: "Try again", genericError: "Something went wrong.", emptyChat: "Ask a question or choose a quick action.", noSummary: "No saved summary yet.", noActiveSprint: "No active sprint to summarize", summaryReady: "Summary ready", generateTitle: "Generate todos", describeFeature: "Describe a feature…", count: "Number of todos", generate: "Generate", addToBacklog: "Add {n} to backlog", planTitle: "Plan sprint", capacity: "Capacity (story points)", focus: "Focus (optional)", suggest: "Suggest plan", goal: "Sprint goal", reasoning: "Reasoning", total: "Total", createWithTodos: "Create sprint with {n} todos", overCapacity: "This plan exceeds capacity.", summaryTitle: "Sprint summary", regenerate: "Regenerate", generatedAt: "Generated {date}", save: "Save", cancel: "Cancel", selectAll: "Select all", titleLabel: "Title", type: "Type", priority: "Priority", points: "Points", task: "Task", story: "Story", bug: "Bug", low: "Low", medium: "Medium", high: "High", urgent: "Urgent", none: "None", saved: "Items saved successfully", sprintCreated: "Sprint created successfully", summaryFailed: "Sprint completed, but its summary could not be generated.", limitError: "Enter a value within the allowed range.", closeDialog: "Close dialog",
+    },
   },
   ar: {
     brand: "Kanbot",
@@ -516,6 +519,9 @@ export const translations = {
           confirm: "إكمال السبرنت",
         },
       },
+    },
+    ai: {
+      title: "مساعد الذكاء الاصطناعي", ask: "اسأل الذكاء الاصطناعي", createTodos: "إنشاء مهام", generateWithAi: "إنشاء مهام بالذكاء الاصطناعي", planSprint: "تخطيط سبرنت", summarize: "تلخيص السبرنت", newChat: "محادثة جديدة", close: "إغلاق المساعد", mock: "ذكاء اصطناعي تجريبي", thinking: "يفكر…", send: "إرسال الرسالة", messagePlaceholder: "اسأل عن هذا المشروع…", disclaimer: "قد يخطئ الذكاء الاصطناعي. راجع النتائج قبل الحفظ.", tryAgain: "حاول مرة أخرى", genericError: "حدث خطأ ما.", emptyChat: "اطرح سؤالاً أو اختر إجراءً سريعاً.", noSummary: "لا يوجد ملخص محفوظ بعد.", noActiveSprint: "لا يوجد سبرنت نشط لتلخيصه", summaryReady: "الملخص جاهز", generateTitle: "إنشاء مهام", describeFeature: "صف ميزة…", count: "عدد المهام", generate: "إنشاء", addToBacklog: "إضافة {n} إلى قائمة المهام", planTitle: "تخطيط سبرنت", capacity: "السعة (نقاط القصة)", focus: "التركيز (اختياري)", suggest: "اقتراح خطة", goal: "هدف السبرنت", reasoning: "السبب", total: "الإجمالي", createWithTodos: "إنشاء سبرنت مع {n} مهام", overCapacity: "تتجاوز هذه الخطة السعة المحددة.", summaryTitle: "ملخص السبرنت", regenerate: "إعادة الإنشاء", generatedAt: "أُنشئ {date}", save: "حفظ", cancel: "إلغاء", selectAll: "تحديد الكل", titleLabel: "العنوان", type: "النوع", priority: "الأولوية", points: "النقاط", task: "مهمة", story: "قصة", bug: "خلل", low: "منخفض", medium: "متوسط", high: "مرتفع", urgent: "عاجل", none: "بلا", saved: "تم حفظ العناصر بنجاح", sprintCreated: "تم إنشاء السبرنت بنجاح", summaryFailed: "اكتمل السبرنت، لكن تعذر إنشاء ملخصه.", limitError: "أدخل قيمة ضمن النطاق المسموح.", closeDialog: "إغلاق النافذة",
     },
   },
 } as const;

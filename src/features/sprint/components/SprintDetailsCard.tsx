@@ -1,6 +1,7 @@
 import { Sparkles, Calendar, CheckCircle2, Play } from "lucide-react";
 import { Button } from "../../../components/ui/Button";
 import type { Sprint } from "../../../types/api";
+import { useAiUi } from "../../../store/useAiUi";
 
 interface SprintsCopy {
   selectSprint: string;
@@ -32,6 +33,7 @@ export function SprintDetailsCard({
   onStart,
   onOpenCompleteModal,
 }: SprintDetailsCardProps) {
+  const openSummary = useAiUi((s) => s.openSummary);
   if (!currentSprint) {
     return (
       <div className="flex min-h-[300px] items-center justify-center rounded-2xl border border-slate-200 bg-white p-6 text-slate-400 text-xs dark:border-slate-800 dark:bg-slate-900">
@@ -157,6 +159,7 @@ export function SprintDetailsCard({
             </h3>
           </div>
           <Button
+            onClick={() => openSummary(currentSprint.id)}
             variant="outline"
             size="sm"
             className="h-8 text-[11px] font-semibold gap-1.5 cursor-pointer inline-flex items-center"

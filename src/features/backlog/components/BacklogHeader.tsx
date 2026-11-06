@@ -2,13 +2,13 @@ import { Search, Sparkles, Activity, Plus, ChevronDown } from "lucide-react";
 import { Button } from "../../../components/ui/Button";
 import { TODO_PRIORITIES, TODO_TYPES } from "../../../types/api";
 import type { TodoPriority, TodoType } from "../../../types/api";
+import { useAiUi } from "../../../store/useAiUi";
 
 interface BacklogCopy {
   subtitle: string;
   title: string;
   todos: string;
   pts: string;
-  askAi: string;
   search: string;
   allPriorities: string;
   priorityLabels: Record<TodoPriority, string>;
@@ -44,6 +44,7 @@ export function BacklogHeader({
   totalPoints,
   onCreateSprint,
 }: BacklogHeaderProps) {
+  const openAiDialog = useAiUi((s) => s.openDialog);
   return (
     <header className="space-y-5">
       {/* ── العنوان العلوي مع لمسة جمالية متدرجة ── */}
@@ -67,19 +68,6 @@ export function BacklogHeader({
           </div>
         </div>
 
-        {/* زر الذكاء الاصطناعي الرئيسي */}
-        <Button
-          variant="outline"
-          leftIcon={
-            <Sparkles
-              size={16}
-              className="text-indigo-600 dark:text-indigo-400"
-            />
-          }
-          className="rounded-xl border-indigo-200 bg-indigo-50/50 text-indigo-700 hover:bg-indigo-100/80 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-900/50 cursor-pointer shadow-xs transition-all"
-        >
-          {copy.askAi}
-        </Button>
       </div>
 
       {/* ── شريط البحث والفلاتر الفاخر ── */}
@@ -164,6 +152,7 @@ export function BacklogHeader({
         {/* ── أزرار العمليات السفلية مع ربط زر إنشاء السبرنت ── */}
         <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3.5 dark:border-slate-800/80">
           <Button
+            onClick={() => openAiDialog("generate")}
             variant="outline"
             size="sm"
             leftIcon={<Sparkles size={13} className="text-indigo-500" />}
@@ -172,6 +161,7 @@ export function BacklogHeader({
             {copy.generateTodos}
           </Button>
           <Button
+            onClick={() => openAiDialog("plan")}
             variant="outline"
             size="sm"
             leftIcon={<Activity size={13} className="text-amber-500" />}

@@ -5,6 +5,8 @@ import type {
   CreateTodoRequest,
   UpdateTodoRequest,
   MoveTodoRequest,
+  BulkCreateTodosResponse,
+  BulkCreateTodosRequest,
 } from "../types/api";
 
 /** 1. جلب مهام المشروع (مع إمكانية الفلترة أو جلب الباكلوغ) */
@@ -68,4 +70,15 @@ export async function moveTodo(
     moveData,
   );
   return data.todo;
+}
+export async function bulkCreateTodos(
+  projectId: string,
+  data: BulkCreateTodosRequest,
+): Promise<Todo[]> {
+  const res = await request<BulkCreateTodosResponse>(
+    "POST",
+    `/projects/${projectId}/todos/bulk`,
+    data,
+  );
+  return res.todos;
 }

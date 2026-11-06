@@ -29,12 +29,15 @@ import { QuickCreateBar } from "./components/QuickCreateBar";
 import { TodoDetailsDialog } from "../todos/TodoDetailsDialog";
 import { SprintsList } from "../sprint/SprintsList";
 import { SprintFormDialog } from "../sprint/components/SprintFormDialog";
+import { useAiUi } from "../../store/useAiUi";
+import { Button } from "../../components/ui/Button";
 
 export function BacklogPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const copy = t.projectsPage.backlogPage;
+  const openAiDialog = useAiUi((s) => s.openDialog);
 
   const { createTodo, isCreating } = useTodos(projectId, "backlog");
   const { moveTodo } = useTodos(projectId);
@@ -335,6 +338,7 @@ export function BacklogPage() {
                       name: sprint.name,
                     }))}
                   />
+                  {rawBacklogTodos.length === 0 && <Button variant="outline" onClick={() => openAiDialog("generate")}>{t.ai.generateWithAi}</Button>}
 
                   <QuickCreateBar
                     quickTitle={quickTitle}

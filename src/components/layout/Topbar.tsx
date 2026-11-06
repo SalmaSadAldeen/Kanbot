@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useParams } from "react-router";
 import {
   Globe,
   Moon,
@@ -11,15 +12,18 @@ import {
 import { useAuth } from "../../features/auth/AuthProvider";
 import { useAppStore, useTranslation } from "../../store/useAppStore";
 import { Dialog } from "../ui/Dialog";
+import { useAiUi } from "../../store/useAiUi";
 
 export function Topbar() {
   const { user, logout } = useAuth();
+  const { projectId } = useParams<{ projectId?: string }>();
   const { t, lang } = useTranslation();
   const { theme, isCollapsed, isMobileSidebarOpen, toggleTheme, toggleLanguage, toggleSidebar } =
     useAppStore();
 
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const isRtl = lang === "ar";
+  const setAiOpen = useAiUi(s => s.setDrawerOpen);
 
   return (
     <>
@@ -66,6 +70,7 @@ export function Topbar() {
 
         {/* Controls */}
         <nav aria-label="Top bar controls" className="flex items-center gap-1.5">
+          {projectId && <button type="button" onClick={() => setAiOpen(true)} className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">{t.ai.ask}</button>}
           {/* Language toggle */}
           <button
             type="button"

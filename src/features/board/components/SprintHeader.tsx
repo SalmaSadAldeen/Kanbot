@@ -4,7 +4,6 @@ import {
   Target,
   Sparkles,
   CheckCircle2,
-  Bot,
   Clock,
   Zap,
 } from "lucide-react";
@@ -19,7 +18,6 @@ interface SprintHeaderProps {
   sprint: Sprint;
   onCompleteSprint: () => void;
   onSummarize: () => void;
-  onAskAi: () => void;
   isCompleting?: boolean;
 }
 
@@ -97,7 +95,6 @@ export function SprintHeader({
   sprint,
   onCompleteSprint,
   onSummarize,
-  onAskAi,
   isCompleting = false,
 }: SprintHeaderProps) {
   const { t, lang } = useTranslation();
@@ -195,16 +192,6 @@ export function SprintHeader({
 
           {/* Right: action buttons */}
           <div className="flex shrink-0 flex-wrap items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              leftIcon={<Bot size={13} />}
-              onClick={onAskAi}
-              className="h-8 rounded-lg text-xs font-semibold cursor-pointer"
-            >
-              {bd.askAi}
-            </Button>
-
             <Button
               variant="outline"
               size="sm"

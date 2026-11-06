@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { useParams, Link } from "react-router";
+import { useParams, Link, useNavigate } from "react-router";
 import {
   DndContext,
   DragOverlay,
@@ -26,6 +26,9 @@ import { CompleteSprintDialog } from "../sprint/components/CompleteSprintDialog"
 import type { Todo, TodoStatus, CompleteSprintRequest } from "../../types/api";
 import { TODO_STATUSES } from "../../types/api";
 import { useTranslation } from "../../store/useAppStore";
+import { useAiUi } from "../../store/useAiUi";
+import { useSprintSummary } from "../../hooks/useAi";
+import toast from "react-hot-toast";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper
@@ -41,8 +44,11 @@ function toStatus(droppableId: string): TodoStatus | null {
 // ─────────────────────────────────────────────────────────────────────────────
 export function BoardPage() {
   const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const board = t.projectsPage.boardPage;
+  const openSummary = useAiUi((s) => s.openSummary);
+  const summarizeSprint = useSprintSummary();
 
   // 1. Resolve active sprint id from project stats
   const projectQuery = useProject(projectId ?? "");
@@ -162,22 +168,23 @@ export function BoardPage() {
   // 7. Complete sprint confirmation handler
   const handleCompleteConfirm = async (
     targetSprintId: string | null,
-    // _generateSummary: boolean,
+    generateSummary: boolean,
   ) => {
     if (!sprint) return;
-    try {
-      const payload: CompleteSprintRequest = {
-        moveUnfinishedTo: targetSprintId ?? "backlog",
-      };
-      await completeSprint.mutateAsync({
-        sprintId: sprint.id,
-        data: payload,
-      });
-      setIsCompleteModalOpen(false);
-      void refetch();
-    } catch (err) {
-      console.error("Failed to complete sprint:", err);
+    const payload: CompleteSprintRequest = {
+      moveUnfinishedTo: targetSprintId ?? "backlog",
+    };
+    await completeSprint.mutateAsync({
+      sprintId: sprint.id,
+      data: payload,
+    });
+    setIsCompleteModalOpen(false);
+    void refetch();
+    if (generateSummary) {
+      try { await summarizeSprint.mutateAsync(sprint.id); toast.success(t.ai.summaryReady); }
+      catch (error) { toast.error(error instanceof Error ? error.message : t.ai.summaryFailed); }
     }
+    navigate(`/projects/${projectId}/sprints/${sprint.id}`);
   };
 
   // ── Render states ──────────────────────────────────────────────────────────
@@ -244,12 +251,7 @@ export function BoardPage() {
       <SprintHeader
         sprint={sprint}
         onCompleteSprint={() => setIsCompleteModalOpen(true)}
-        onSummarize={() => {
-          /* TODO Day 6: AI summary */
-        }}
-        onAskAi={() => {
-          /* TODO Day 6: AI drawer */
-        }}
+        onSummarize={() => openSummary(sprint.id)}
         isCompleting={completeSprint.isPending}
       />
 
