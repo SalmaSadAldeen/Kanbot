@@ -25,10 +25,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const queryClient = useQueryClient();
   const token = localStorage.getItem("kanbot_token");
 
-  const {
-    data: user = null,
-    isLoading,
-  } = useQuery({
+  const { data: user = null, isLoading } = useQuery({
     queryKey: ["auth-me"],
     queryFn: async () => {
       const response = await getMe();
@@ -51,14 +48,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     queryClient.setQueryData(["auth-me"], newUser);
   };
 
+  // معالجة انتهاء الجلسة وإبلاغ المستخدم بوضوح عبر expired=1
   useEffect(() => {
     setUnauthorizedHandler(() => {
       localStorage.removeItem("kanbot_token");
       queryClient.clear();
-      const redirect = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-      window.location.replace(
-        `/login?redirect=${encodeURIComponent(redirect)}&expired=1`,
-      );
+
+      const currentRedirect = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+
+      // إذا لم نكن أصلاً في صفحة اللوجن، نقوم بالتوجيه مع إعلامه بانتهاء الجلسة
+      if (!window.location.pathname.includes("/login")) {
+        window.location.replace(
+          `/login?redirect=${encodeURIComponent(currentRedirect)}&expired=1`,
+        );
+      }
     });
   }, [queryClient]);
 
