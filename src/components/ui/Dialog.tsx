@@ -7,6 +7,7 @@ interface DialogProps {
   title: string;
   children: React.ReactNode;
   maxWidth?: "sm" | "md" | "lg" | "xl";
+  disableCloseWhilePending?: boolean;
 }
 
 const maxWidthClasses: Record<NonNullable<DialogProps["maxWidth"]>, string> = {
@@ -22,6 +23,7 @@ export const Dialog: React.FC<DialogProps> = ({
   title,
   children,
   maxWidth = "md",
+  disableCloseWhilePending = false,
 }) => {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const onCloseRef = useRef(onClose);
@@ -36,20 +38,39 @@ export const Dialog: React.FC<DialogProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
-    triggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    triggerRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { e.preventDefault(); onCloseRef.current(); }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        if (!disableCloseWhilePending) {
+          onCloseRef.current();
+        }
+      }
       if (e.key === "Tab" && panelRef.current) {
-        const items = panelRef.current.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])');
-        const first = items[0]; const last = items[items.length - 1];
-        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
-        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
+        const items = panelRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        );
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     closeButtonRef.current?.focus();
-    return () => { window.removeEventListener("keydown", handleKeyDown); triggerRef.current?.focus(); };
-  }, [isOpen]);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      triggerRef.current?.focus();
+    };
+  }, [disableCloseWhilePending, isOpen]);
 
   if (!isOpen) return null;
 
@@ -64,7 +85,11 @@ export const Dialog: React.FC<DialogProps> = ({
       <div
         aria-hidden="true"
         className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
-        onClick={onClose}
+        onClick={() => {
+          if (!disableCloseWhilePending) {
+            onClose();
+          }
+        }}
         style={{ animation: "dialogFadeIn 0.15s ease" }}
       />
 
@@ -84,7 +109,11 @@ export const Dialog: React.FC<DialogProps> = ({
           </h3>
           <button
             ref={closeButtonRef}
-            onClick={onClose}
+            onClick={() => {
+              if (!disableCloseWhilePending) {
+                onClose();
+              }
+            }}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
             aria-label="Close dialog"
           >

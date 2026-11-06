@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { Search, ListFilter } from "lucide-react";
 import { TODO_PRIORITIES, TODO_TYPES } from "../../../types/api";
 import type { TodoPriority, TodoType } from "../../../types/api";
@@ -27,16 +26,6 @@ export function BacklogFilters({
   type,
   setType,
 }: BacklogFiltersProps) {
-  const [localSearch, setLocalSearch] = useState<string>(searchQuery);
-
-  // تطبيق الـ Debounce (تأخير 300ms) لتلبية متطلب BL-6 بدقة
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onSearchChange(localSearch);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [localSearch, onSearchChange]);
-
   return (
     <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
       <label className="relative min-w-48 flex-1">
@@ -45,8 +34,8 @@ export function BacklogFilters({
           className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 text-slate-400"
         />
         <input
-          value={localSearch}
-          onChange={(e) => setLocalSearch(e.target.value)}
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
           placeholder={copy.search}
           className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50/50 ps-10 pe-3 text-sm text-slate-800 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-100 dark:focus:bg-slate-800"
         />

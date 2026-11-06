@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAiUi } from "../../../store/useAiUi";
 import { useSprintSummary } from "../../../hooks/useAi";
@@ -8,6 +7,7 @@ import { Button } from "../../../components/ui/Button";
 import { useTranslation } from "../../../store/useAppStore";
 import { AiStateBlock } from "./AiStateBlock";
 import ReactMarkdown from "react-markdown";
+
 export function SprintSummaryDialog() {
   const { t, lang } = useTranslation();
   const c = t.ai;
@@ -19,20 +19,32 @@ export function SprintSummaryDialog() {
     enabled: !!id,
   });
   const summaryMutation = useSprintSummary();
-  const { mutate, isPending, error: summaryError } = summaryMutation;
-  const attemptedFor = useRef<string | null>(null);
-  useEffect(() => {
-    if (id && query.isSuccess && !query.data.summary && attemptedFor.current !== id) {
-      attemptedFor.current = id;
-      mutate(id);
-    }
-  }, [id, query.isSuccess, query.data?.summary, mutate]);
+  const {
+    mutate,
+    isPending,
+    error: summaryError,
+    data: mutationData,
+  } = summaryMutation;
+
+  // إعطاء الأولوية للبيانات الناتجة فوراً من التوليد، ثم البيانات المحفوظة بالسبرينت
+  const activeSummary = mutationData?.sprint.summary ?? query.data?.summary;
+
   const generate = () => {
-    if (id) mutate(id);
+    if (!id || isPending) return;
+    mutate(id);
   };
+
   return (
-    <Dialog isOpen={!!id} onClose={() => { if (!isPending) close(); }} title={c.summaryTitle} maxWidth="lg">
-      <div className="space-y-3">
+    <Dialog
+      isOpen={!!id}
+      onClose={() => {
+        if (!isPending) close();
+      }}
+      title={c.summaryTitle}
+      maxWidth="lg"
+      disableCloseWhilePending={isPending}
+    >
+      <div className="space-y-4">
         {query.isLoading ? (
           <AiStateBlock loading />
         ) : query.error ? (
@@ -40,35 +52,57 @@ export function SprintSummaryDialog() {
             error={query.error}
             onRetry={() => void query.refetch()}
           />
-        ) : query.data?.summary ? (
+        ) : activeSummary ? (
           <>
-            <ReactMarkdown>{query.data.summary.content}</ReactMarkdown>
-            <p className="text-xs text-slate-500">
+            <div className="prose prose-slate max-w-none dark:prose-invert prose-p:my-2 prose-headings:mt-4">
+              <ReactMarkdown>{activeSummary.content}</ReactMarkdown>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               {c.generatedAt.replace(
                 "{date}",
                 new Intl.DateTimeFormat(lang, {
                   dateStyle: "medium",
                   timeStyle: "short",
-                }).format(new Date(query.data.summary.generatedAt)),
+                }).format(new Date(activeSummary.generatedAt)),
               )}
             </p>
           </>
         ) : (
-          <p className="text-sm text-slate-500">{c.noSummary}</p>
+          !isPending && (
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              {c.noSummary}
+            </p>
+          )
         )}
-        <AiStateBlock
-          loading={isPending}
-          error={summaryError}
-          onRetry={generate}
-        />
-        <Button
-          onClick={generate}
-          isLoading={isPending}
-          disabled={isPending}
-        >
-          {query.data?.summary ? c.regenerate : c.summarize}
-        </Button>
-        <Button variant="secondary" onClick={close} disabled={isPending}>{c.close}</Button>
+
+        {/* يظهر الـ Spinner فقط في حالة وجود كورس جاري أو خطأ بالتوليد */}
+        {(isPending || summaryError) && (
+          <AiStateBlock
+            loading={isPending}
+            error={summaryError}
+            onRetry={generate}
+          />
+        )}
+
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-3 dark:border-slate-800">
+          <Button onClick={generate} isLoading={isPending} disabled={isPending}>
+            {activeSummary ? c.regenerate : c.generate}
+          </Button>
+
+          <Button
+            variant="secondary"
+            onClick={() => {
+              if (!isPending) close();
+            }}
+            disabled={isPending}
+          >
+            {c.close}
+          </Button>
+        </div>
+
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          {c.disclaimer}
+        </p>
       </div>
     </Dialog>
   );

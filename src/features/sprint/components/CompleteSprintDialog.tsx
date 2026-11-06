@@ -30,6 +30,12 @@ export function CompleteSprintDialog({
 
   if (!isOpen || !activeSprint) return null;
 
+  const unfinishedTasksCount = Math.max(
+    0,
+    activeSprint.stats.totalTodos - activeSprint.stats.doneTodos,
+  );
+  const showUnfinishedDestination = unfinishedTasksCount > 0;
+
   const handleComplete = async () => {
     const target = destination === "backlog" ? null : destination;
     setSubmitError(null);
@@ -50,35 +56,51 @@ export function CompleteSprintDialog({
       title={`Complete ${activeSprint.name}`}
     >
       <div className="space-y-4 py-2">
-        <p className="text-xs text-slate-600 dark:text-slate-400">Done: {activeSprint.stats.doneTodos} · Not done: {activeSprint.stats.totalTodos - activeSprint.stats.doneTodos}</p>
-        {activeSprint.stats.totalTodos > activeSprint.stats.doneTodos && <p className="text-xs text-slate-600 dark:text-slate-400">This sprint has unfinished tasks. Where would you like to move them?</p>}
+        <p className="text-xs text-slate-600 dark:text-slate-400">
+          Done: {activeSprint.stats.doneTodos} · Not done:{" "}
+          {unfinishedTasksCount}
+        </p>
+        {showUnfinishedDestination ? (
+          <p className="text-xs text-slate-600 dark:text-slate-400">
+            This sprint has unfinished tasks. Where would you like to move them?
+          </p>
+        ) : (
+          <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+            That&apos;s all of them - well done!
+          </p>
+        )}
 
-        <div className="space-y-1.5">
-          <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">
-            Unfinished tasks destination
-          </label>
-          <div className="relative">
-            <select
-              value={destination}
-              onChange={(e) => setDestination(e.target.value)}
-              className="h-10 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-3 pe-8 text-xs font-semibold text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-            >
-              <option value="backlog">Backlog (Default)</option>
-              {plannedSprints.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} (Planned)
-                </option>
-              ))}
-            </select>
-            <Layers
-              size={13}
-              className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-slate-400"
-            />
+        {showUnfinishedDestination && (
+          <div className="space-y-1.5">
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              Unfinished tasks destination
+            </label>
+            <div className="relative">
+              <select
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+                className="h-10 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-3 pe-8 text-xs font-semibold text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              >
+                <option value="backlog">Backlog (Default)</option>
+                {plannedSprints.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} (Planned)
+                  </option>
+                ))}
+              </select>
+              <Layers
+                size={13}
+                className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {submitError && (
-          <p role="alert" className="text-xs font-medium text-rose-600 dark:text-rose-400">
+          <p
+            role="alert"
+            className="text-xs font-medium text-rose-600 dark:text-rose-400"
+          >
             {submitError}
           </p>
         )}

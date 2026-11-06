@@ -6,6 +6,7 @@ import { SprintHeader } from "./SprintHeaderBacklog";
 interface SprintSectionProps {
   sprint: Sprint;
   todos: Todo[];
+  rawTotalCount: number;
   allSprints: Sprint[];
   isCollapsed: boolean;
   onToggle: () => void;
@@ -19,6 +20,7 @@ interface SprintSectionProps {
 export function SprintSection({
   sprint,
   todos,
+  rawTotalCount,
   allSprints,
   isCollapsed,
   onToggle,
@@ -49,7 +51,7 @@ export function SprintSection({
           containerId={`sprint-container-${sprint.id}`}
           sprintId={sprint.id}
           todos={todos}
-          rawTotalCount={todos.length}
+          rawTotalCount={rawTotalCount}
           moreLabel={copy.moreActions}
           noResultsText={copy.noResults}
           emptyStateText={copy.emptyState}

@@ -5,6 +5,7 @@ interface SprintsListProps {
   sprints: Sprint[];
   allSprints: Sprint[];
   allTodos: Todo[];
+  visibleTodos?: Todo[];
   collapsedMap: Set<string>;
   onToggleSection: (sectionId: string) => void;
   onEditSprint: (sprint: Sprint) => void;
@@ -18,6 +19,7 @@ export function SprintsList({
   sprints,
   allSprints,
   allTodos,
+  visibleTodos,
   collapsedMap,
   onToggleSection,
   onEditSprint,
@@ -26,18 +28,24 @@ export function SprintsList({
   onSelectTodo,
   onEditTodo,
 }: SprintsListProps) {
+  const activeVisibleTodos = visibleTodos ?? allTodos;
+
   return (
     <div className="space-y-4">
       {sprints.map((sprint) => {
-        const sprintTodos = allTodos.filter(
+        const sprintTodos = activeVisibleTodos.filter(
           (todo) => todo.sprintId === sprint.id,
         );
+        const rawSprintCount = allTodos.filter(
+          (todo) => todo.sprintId === sprint.id,
+        ).length;
 
         return (
           <SprintSection
             key={sprint.id}
             sprint={sprint}
             todos={sprintTodos}
+            rawTotalCount={rawSprintCount}
             allSprints={allSprints}
             isCollapsed={collapsedMap.has(sprint.id)}
             onToggle={() => onToggleSection(sprint.id)}

@@ -1,48 +1,141 @@
+/* eslint-disable react-refresh/only-export-components */
+import React, { Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router";
 import { ProtectedRoute } from "./features/auth/ProtectedRoute";
 import { GuestRoute } from "./features/auth/GuestRoute";
-import { LoginPage } from "./features/auth/pages/LoginPage";
-import { RegisterPage } from "./features/auth/pages/RegisterPage";
 import { AppShell } from "./components/layout/AppShell";
-import { ProjectsPage } from "./features/projects/ProjectsPage";
-import { BacklogPage } from "./features/backlog/BacklogPage";
-import { SprintsPage } from "./features/sprint/SprintsPage";
-import { BoardPage } from "./features/board/BoardPage";
+
+const LoginPage = React.lazy(() =>
+  import("./features/auth/pages/LoginPage").then((mod) => ({
+    default: mod.LoginPage,
+  })),
+);
+const RegisterPage = React.lazy(() =>
+  import("./features/auth/pages/RegisterPage").then((mod) => ({
+    default: mod.RegisterPage,
+  })),
+);
+const ProjectsPage = React.lazy(() =>
+  import("./features/projects/ProjectsPage").then((mod) => ({
+    default: mod.ProjectsPage,
+  })),
+);
+const BacklogPage = React.lazy(() =>
+  import("./features/backlog/BacklogPage").then((mod) => ({
+    default: mod.BacklogPage,
+  })),
+);
+const SprintsPage = React.lazy(() =>
+  import("./features/sprint/SprintsPage").then((mod) => ({
+    default: mod.SprintsPage,
+  })),
+);
+const BoardPage = React.lazy(() =>
+  import("./features/board/BoardPage").then((mod) => ({
+    default: mod.BoardPage,
+  })),
+);
+const SettingsPage = React.lazy(() =>
+  import("./features/settings/SettingsPage").then((mod) => ({
+    default: mod.SettingsPage,
+  })),
+);
+
+function RouteFallback() {
+  return (
+    <div className="flex min-h-[220px] items-center justify-center text-sm font-medium text-slate-500 dark:text-slate-400">
+      Loading page...
+    </div>
+  );
+}
+
+const routeLayout = (
+  <Suspense fallback={<RouteFallback />}>
+    <AppShell />
+  </Suspense>
+);
 
 export const router = createBrowserRouter([
   {
     element: <GuestRoute />,
     children: [
-      { path: "/login", element: <LoginPage /> },
-      { path: "/register", element: <RegisterPage /> },
+      {
+        path: "/login",
+        element: (
+          <Suspense fallback={<RouteFallback />}>
+            <LoginPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "/register",
+        element: (
+          <Suspense fallback={<RouteFallback />}>
+            <RegisterPage />
+          </Suspense>
+        ),
+      },
     ],
   },
   {
     element: <ProtectedRoute />,
     children: [
       {
-        element: <AppShell />,
+        element: routeLayout,
         children: [
           { path: "/", element: <Navigate to="/projects" replace /> },
-          { path: "/projects", element: <ProjectsPage /> },
+          {
+            path: "/projects",
+            element: (
+              <Suspense fallback={<RouteFallback />}>
+                <ProjectsPage />
+              </Suspense>
+            ),
+          },
           {
             path: "/projects/:projectId",
             element: <Navigate to="backlog" replace />,
           },
           {
             path: "/projects/:projectId/backlog",
-            element: <BacklogPage />,
+            element: (
+              <Suspense fallback={<RouteFallback />}>
+                <BacklogPage />
+              </Suspense>
+            ),
           },
           {
             path: "/projects/:projectId/board",
-            element: <BoardPage />,
+            element: (
+              <Suspense fallback={<RouteFallback />}>
+                <BoardPage />
+              </Suspense>
+            ),
           },
           {
             path: "/projects/:projectId/sprints",
-            element: <SprintsPage />,
+            element: (
+              <Suspense fallback={<RouteFallback />}>
+                <SprintsPage />
+              </Suspense>
+            ),
           },
-          { path: "/projects/:projectId/sprints/:sprintId", element: <SprintsPage /> },
-          { path: "/settings", element: <div className="p-4">Settings</div> },
+          {
+            path: "/projects/:projectId/sprints/:sprintId",
+            element: (
+              <Suspense fallback={<RouteFallback />}>
+                <SprintsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "/settings",
+            element: (
+              <Suspense fallback={<RouteFallback />}>
+                <SettingsPage />
+              </Suspense>
+            ),
+          },
         ],
       },
     ],

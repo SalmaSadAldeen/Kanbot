@@ -10,11 +10,13 @@ interface AppState {
   lang: Language;
   isCollapsed: boolean;
   isMobileSidebarOpen: boolean;
+  lastProjectId: string | null;
   toggleTheme: () => void;
   setLanguage: (lang: Language) => void;
   toggleLanguage: () => void;
   toggleSidebar: () => void;
   closeMobileSidebar: () => void;
+  setLastProjectId: (id: string | null) => void;
 }
 
 const applyThemeAndLang = (theme: Theme, lang: Language) => {
@@ -36,6 +38,7 @@ export const useAppStore = create<AppState>()(
       lang: "en",
       isCollapsed: false,
       isMobileSidebarOpen: false,
+      lastProjectId: null,
 
       toggleTheme: () => {
         const nextTheme = get().theme === "light" ? "dark" : "light";
@@ -50,6 +53,8 @@ export const useAppStore = create<AppState>()(
 
       toggleLanguage: () => {
         const nextLang = get().lang === "en" ? "ar" : "en";
+        // إغلاق السايد بار لحظياً لمنع التشوه البصري عند قلب الاتجاه
+        set({ isCollapsed: false, isMobileSidebarOpen: false });
         applyThemeAndLang(get().theme, nextLang);
         set({ lang: nextLang });
       },
@@ -57,9 +62,12 @@ export const useAppStore = create<AppState>()(
       toggleSidebar: () => {
         if (typeof window !== "undefined" && window.innerWidth < 1024) {
           set({ isMobileSidebarOpen: !get().isMobileSidebarOpen });
-        } else set({ isCollapsed: !get().isCollapsed });
+        } else {
+          set({ isCollapsed: !get().isCollapsed });
+        }
       },
       closeMobileSidebar: () => set({ isMobileSidebarOpen: false }),
+      setLastProjectId: (id: string | null) => set({ lastProjectId: id }),
     }),
     {
       name: "kanbot_settings",

@@ -44,6 +44,7 @@ export function BacklogPage() {
 
   const {
     backlogTodos,
+    filteredTodos,
     rawBacklogTodos,
     isLoading: isBacklogLoading,
     error: backlogError,
@@ -88,7 +89,7 @@ export function BacklogPage() {
     }),
   );
 
-  const totalPoints = rawBacklogTodos.reduce(
+  const totalPoints = filteredTodos.reduce(
     (sum: number, todo: Todo) => sum + (todo.storyPoints ?? 0),
     0,
   );
@@ -223,7 +224,7 @@ export function BacklogPage() {
         setPriority={setPriority}
         type={type}
         setType={setType}
-        totalTodos={rawBacklogTodos.length}
+        totalTodos={filteredTodos.length}
         totalPoints={totalPoints}
         onCreateSprint={() => {
           setEditingSprint(null);
@@ -276,6 +277,7 @@ export function BacklogPage() {
               sprints={sprints}
               allSprints={allSprints}
               allTodos={rawBacklogTodos}
+              visibleTodos={filteredTodos}
               collapsedMap={collapsed}
               onToggleSection={toggleSection}
               onEditSprint={(s) => {
@@ -338,7 +340,14 @@ export function BacklogPage() {
                       name: sprint.name,
                     }))}
                   />
-                  {rawBacklogTodos.length === 0 && <Button variant="outline" onClick={() => openAiDialog("generate")}>{t.ai.generateWithAi}</Button>}
+                  {rawBacklogTodos.length === 0 && (
+                    <Button
+                      variant="outline"
+                      onClick={() => openAiDialog("generate")}
+                    >
+                      {t.ai.generateWithAi}
+                    </Button>
+                  )}
 
                   <QuickCreateBar
                     quickTitle={quickTitle}

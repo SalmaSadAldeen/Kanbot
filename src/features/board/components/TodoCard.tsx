@@ -120,16 +120,25 @@ export function TodoCard({ todo, onOpen, isMoving = false }: TodoCardProps) {
     <div
       ref={setNodeRef}
       style={style}
+      onClick={() => onOpen(todo)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen(todo);
+        }
+      }}
       className={[
-        "group relative flex flex-col gap-0 rounded-xl border bg-white",
+        "group relative flex flex-col gap-0 rounded-xl border bg-white cursor-pointer",
         "select-none transition-all duration-150",
         "dark:bg-slate-800",
         isDragging
           ? "z-50 scale-[1.02] border-indigo-400 shadow-2xl shadow-indigo-500/30 opacity-95 dark:border-indigo-500"
           : [
               "border-slate-200 shadow-sm",
-              "hover:-translate-y-px hover:border-indigo-200 hover:shadow-md",
-              "dark:border-slate-700/80 dark:hover:border-indigo-700",
+              "hover:-translate-y-px hover:border-indigo-300 hover:shadow-md",
+              "dark:border-slate-700/80 dark:hover:border-indigo-600",
               isMoving ? "opacity-50" : "",
             ].join(" "),
       ]
@@ -159,46 +168,33 @@ export function TodoCard({ todo, onOpen, isMoving = false }: TodoCardProps) {
             <TypeBadge type={todo.type} />
           </div>
 
-          {/* Drag handle — مستقل تماماً للسحب فقط */}
-          <button
-            type="button"
+          {/* Drag handle — الـ listeners تابعة حصراً لهذه الأيقونة وحدها ويتم منع انتشار النقر */}
+          <div
             {...attributes}
             {...listeners}
             onClick={(e) => {
               e.stopPropagation();
-              e.preventDefault();
+            }}
+            onPointerDown={(e) => {
+              e.stopPropagation();
             }}
             aria-label="Drag card"
             className={[
               "flex h-6 w-5 shrink-0 cursor-grab items-center justify-center rounded",
               "text-slate-300 opacity-0 transition-all",
               "group-hover:opacity-100 hover:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700",
-              "focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500",
               "active:cursor-grabbing",
               "dark:text-slate-600 dark:hover:text-slate-400",
             ].join(" ")}
           >
             <GripVertical size={13} strokeWidth={2} />
-          </button>
+          </div>
         </div>
 
-        {/* Row 2: Title — النقر هنا حصراً يفتح نافذة التعديل بشكل فوري ونظيف */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpen(todo);
-          }}
-          className={[
-            "w-full text-start text-[13px] font-semibold leading-snug",
-            "line-clamp-2 break-words",
-            "text-slate-800 transition-colors",
-            "hover:text-indigo-600 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500",
-            "dark:text-slate-200 dark:hover:text-indigo-400",
-          ].join(" ")}
-        >
+        {/* Row 2: Title */}
+        <div className="w-full text-start text-[13px] font-semibold leading-snug line-clamp-2 break-words text-slate-800 dark:text-slate-200">
           {todo.title}
-        </button>
+        </div>
 
         {/* Row 3: priority icon + points */}
         <div className="flex items-center justify-between gap-2 border-t border-slate-100 pt-2 dark:border-slate-700/60">

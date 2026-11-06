@@ -10,13 +10,15 @@ export function AppShell() {
   const { isMobileSidebarOpen, closeMobileSidebar } = useAppStore();
   const location = useLocation();
 
-  useEffect(() => { closeMobileSidebar(); }, [location.pathname, closeMobileSidebar]);
+  useEffect(() => {
+    if (window.innerWidth < 1024) {
+      closeMobileSidebar();
+    }
+  }, [location.pathname, closeMobileSidebar]);
 
-  // Close the mobile overlay sidebar on Escape key
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isMobileSidebarOpen) {
-        // Only close if we're on a mobile viewport
         if (window.innerWidth < 1024) closeMobileSidebar();
       }
     };
@@ -25,26 +27,21 @@ export function AppShell() {
   }, [isMobileSidebarOpen, closeMobileSidebar]);
 
   useEffect(() => {
-    document.body.style.overflow = isMobileSidebarOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    document.body.style.overflow =
+      isMobileSidebarOpen && window.innerWidth < 1024 ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [isMobileSidebarOpen]);
 
   return (
-    <div className="flex h-screen w-screen flex-col overflow-hidden bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-50 transition-colors duration-300">
+    <div className="flex h-screen w-screen flex-col overflow-hidden bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-50">
       <ToastProvider />
       <AiRoot />
 
-      {/* ── Topbar — full width, always on top ── */}
       <Topbar />
 
-      {/* ── Content row: sidebar + main ── */}
-      <div className="relative flex flex-1 overflow-hidden">
-
-        {/*
-          Mobile backdrop overlay.
-          Only rendered on small screens (<lg) when sidebar is open.
-          Clicking it closes the sidebar.
-        */}
+      <div className="flex flex-1 relative overflow-hidden">
         {isMobileSidebarOpen && (
           <div
             aria-hidden="true"
@@ -53,32 +50,12 @@ export function AppShell() {
           />
         )}
 
-        {/*
-          Sidebar:
-          • Desktop (lg+): participates in flex flow, pushes <main>.
-            - isCollapsed → w-16 (icon-only)
-            - !isCollapsed → w-64
-          • Mobile (<lg): absolutely positioned, slides in/out over content.
-            - isCollapsed → -translate-x-full (hidden off screen)
-            - !isCollapsed → translate-x-0 (visible)
-        */}
-        <div
-          className={[
-            // Desktop: static flex child
-            "lg:relative lg:z-auto lg:translate-x-0 lg:shrink-0",
-            // Mobile: absolute overlay
-            "absolute inset-y-0 start-0 z-30",
-            // Smooth slide
-            "transition-transform duration-300 ease-in-out",
-            // Mobile visibility: hidden when isCollapsed, visible when open
-            isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full rtl:translate-x-full lg:translate-x-0",
-          ].join(" ")}
-        >
+        {/* الحاوية بترتب السايد بار والمين بشكل طبيعي ومستقر تماماً باللغتين */}
+        <div className="shrink-0 z-30 lg:static flex">
           <Sidebar />
         </div>
 
-        {/* ── Main content area ── */}
-        <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6">
+        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-4 sm:p-6">
           <Outlet />
         </main>
       </div>
