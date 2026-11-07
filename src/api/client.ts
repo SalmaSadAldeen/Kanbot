@@ -56,7 +56,11 @@ export async function request<T>(
   if (response.status === 401 && !path.includes("/auth/login")) {
     if (unauthorizedHandler && !handlingUnauthorized) {
       handlingUnauthorized = true;
-      unauthorizedHandler();
+      try {
+        unauthorizedHandler();
+      } finally {
+        handlingUnauthorized = false;
+      }
     }
   }
 

@@ -169,6 +169,12 @@ export const translations = {
         todoActions: {
           edit: "Edit",
           delete: "Delete",
+          moveToTop: "Move to top",
+          moveToBottom: "Move to bottom",
+          moveToBacklog: "Move to backlog",
+          moveToSprint: "Move to sprint...",
+          selectSprint: "Select sprint",
+          back: "Back",
         },
         startSprintDialog: {
           title: "Start Sprint",
@@ -390,6 +396,10 @@ export const translations = {
       sessionExpired: "Your session has expired. Please log in again.",
       genericError: " Something went wrong. Please try again.",
     },
+    authInput: {
+      showPassword: "Show password",
+      hidePassword: "Hide password",
+    },
     authFrame: {
       welcomeBack: "Welcome back",
       getStarted: "Get started",
@@ -581,6 +591,12 @@ export const translations = {
         todoActions: {
           edit: "تعديل",
           delete: "حذف",
+          moveToTop: "نقل إلى الأعلى",
+          moveToBottom: "نقل إلى الأسفل",
+          moveToBacklog: "نقل إلى قائمة المهام",
+          moveToSprint: "نقل إلى السبرنت...",
+          selectSprint: "اختر السبرنت",
+          back: "رجوع",
         },
         startSprintDialog: {
           title: "بدء السبرنت",
@@ -804,6 +820,10 @@ export const translations = {
       createAccount: "إنشاء حساب جديد",
       sessionExpired: "انتهت صلاحية جلستك. يرجى تسجيل الدخول مرة أخرى.",
       genericError: "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+    },
+    authInput: {
+      showPassword: "إظهار كلمة المرور",
+      hidePassword: "إخفاء كلمة المرور",
     },
     authFrame: {
       welcomeBack: "أهلاً بك مجدداً",

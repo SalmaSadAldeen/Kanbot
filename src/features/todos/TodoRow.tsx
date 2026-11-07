@@ -143,11 +143,7 @@ export function TodoRow({
         ref={setNodeRef}
         style={style}
         onClick={onSelect}
-        className={`grid items-center gap-2 px-3 py-3 transition-colors duration-200 cursor-pointer outline-none focus:outline-none ring-0 focus:ring-0 ${
-          isSelectMode
-            ? "grid-cols-[1.25rem_1.25rem_auto_minmax(0,1fr)_auto] sm:grid-cols-[1.25rem_1.25rem_auto_minmax(12rem,1fr)_auto_auto_auto_auto]"
-            : "grid-cols-[1.25rem_auto_minmax(0,1fr)_auto] sm:grid-cols-[1.25rem_auto_minmax(12rem,1fr)_auto_auto_auto_auto]"
-        } sm:gap-4 sm:px-4 ${className} ${
+        className={`flex items-center gap-3 px-3 py-3 transition-colors duration-200 cursor-pointer outline-none focus:outline-none ring-0 focus:ring-0 sm:px-4 ${className} ${
           isPendingDelete
             ? "border border-amber-300 bg-amber-50/60 dark:border-amber-900/60 dark:bg-amber-950/20 rounded-xl"
             : isSelected
@@ -158,7 +154,7 @@ export function TodoRow({
         {/* Checkbox يظهر فقط عند تفعيل وضع التحديد */}
         {isSelectMode && (
           <div
-            className="flex items-center justify-center"
+            className="flex items-center justify-center shrink-0"
             onClick={(e) => e.stopPropagation()}
           >
             <input
@@ -170,66 +166,74 @@ export function TodoRow({
           </div>
         )}
 
+        {/* Drag Handle */}
         <span
           {...attributes}
           {...listeners}
           aria-label="Drag to reorder"
-          className="cursor-grab active:cursor-grabbing select-none text-slate-400 hover:text-slate-600 dark:text-slate-600 dark:hover:text-slate-400 transition-colors p-1"
+          className="cursor-grab active:cursor-grabbing select-none text-slate-400 hover:text-slate-600 dark:text-slate-600 dark:hover:text-slate-400 transition-colors p-1 shrink-0"
           onClick={(e) => e.stopPropagation()}
         >
           ⠿
         </span>
 
-        <span className="font-mono text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+        {/* Key */}
+        <span className="font-mono text-[11px] font-semibold text-slate-500 dark:text-slate-400 shrink-0">
           {todo.key}
         </span>
 
+        {/* Title (يتمدد بمرونة تامة ويأخذ المساحة المتاحة) */}
         <span
-          className="min-w-0 truncate text-sm font-medium text-slate-800 dark:text-slate-200 pe-2"
+          className="min-w-0 flex-1 truncate text-sm font-medium text-slate-800 dark:text-slate-200 pe-2"
           title={todo.title}
         >
           {todo.title}
         </span>
 
-        <span className="flex justify-center px-1">
-          <TypeIcon type={todo.type} />
-        </span>
-
-        <span className="max-sm:hidden px-2">
-          <PriorityBadge priority={todo.priority} />
-        </span>
-
-        <span className="max-sm:hidden flex items-center justify-center px-1">
-          <span className="inline-flex h-7 min-w-12 items-center justify-center rounded-md border border-slate-200 bg-slate-100 px-2.5 text-xs font-bold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 shadow-2xs">
-            {todo.storyPoints ?? "-"}
+        {/* الحاوية اليمينية للعناصر الجانبية */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 ms-auto">
+          <span className="flex items-center justify-center">
+            <TypeIcon type={todo.type} />
           </span>
-        </span>
 
-        <div
-          className="flex justify-center items-center ps-1 relative"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {isPendingDelete ? (
-            <button
-              type="button"
-              onClick={handleUndoClick}
-              className="flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1 text-xs font-bold text-white shadow-sm transition hover:bg-amber-700 animate-pulse cursor-pointer"
-            >
-              <RotateCcw size={13} />
-              <span>{isRtl ? "تراجع" : "Undo"}</span>
-            </button>
-          ) : (
-            <TodoActionsMenu
-              onEdit={onEdit}
-              onDelete={handleDeleteClick}
-              onMoveToTop={handleMoveToTop}
-              onMoveToBottom={handleMoveToBottom}
-              onMoveToBacklog={todo.sprintId ? handleMoveToBacklog : undefined}
-              onMoveToSprint={handleMoveToSprint}
-              sprintOptions={sprintOptions}
-              moreLabel={moreLabel}
-            />
-          )}
+          <span className="hidden sm:inline-flex">
+            <PriorityBadge priority={todo.priority} />
+          </span>
+
+          <span className="hidden md:inline-flex items-center justify-center">
+            <span className="inline-flex h-7 min-w-10 items-center justify-center rounded-md border border-slate-200 bg-slate-100 px-2 text-xs font-bold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 shadow-2xs">
+              {todo.storyPoints ?? "-"}
+            </span>
+          </span>
+
+          <div
+            className="flex justify-center items-center relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {isPendingDelete ? (
+              <button
+                type="button"
+                onClick={handleUndoClick}
+                className="flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1 text-xs font-bold text-white shadow-sm transition hover:bg-amber-700 animate-pulse cursor-pointer"
+              >
+                <RotateCcw size={13} />
+                <span>{isRtl ? "تراجع" : "Undo"}</span>
+              </button>
+            ) : (
+              <TodoActionsMenu
+                onEdit={onEdit}
+                onDelete={handleDeleteClick}
+                onMoveToTop={handleMoveToTop}
+                onMoveToBottom={handleMoveToBottom}
+                onMoveToBacklog={
+                  todo.sprintId ? handleMoveToBacklog : undefined
+                }
+                onMoveToSprint={handleMoveToSprint}
+                sprintOptions={sprintOptions}
+                moreLabel={moreLabel}
+              />
+            )}
+          </div>
         </div>
       </div>
 

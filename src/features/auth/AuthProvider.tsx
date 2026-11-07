@@ -3,6 +3,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useState,
 } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { User } from "../../types/api.ts";
@@ -23,7 +24,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const queryClient = useQueryClient();
-  const token = localStorage.getItem("kanbot_token");
+  const [token, setToken] = useState<string | null>(() =>
+    localStorage.getItem("kanbot_token"),
+  );
 
   const { data: user = null, isLoading } = useQuery({
     queryKey: ["auth-me"],
@@ -39,12 +42,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const logout = useCallback(() => {
     localStorage.removeItem("kanbot_token");
+    setToken(null);
     queryClient.clear();
     window.location.replace("/login");
   }, [queryClient]);
 
   const login = (newToken: string, newUser: User) => {
     localStorage.setItem("kanbot_token", newToken);
+    setToken(newToken);
     queryClient.setQueryData(["auth-me"], newUser);
   };
 
@@ -52,6 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     setUnauthorizedHandler(() => {
       localStorage.removeItem("kanbot_token");
+      setToken(null);
       queryClient.clear();
 
       const currentRedirect = `${window.location.pathname}${window.location.search}${window.location.hash}`;

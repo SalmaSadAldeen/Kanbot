@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { UseFormRegisterReturn } from "react-hook-form";
 import type { LucideIcon } from "lucide-react";
 import { Eye, EyeOff } from "lucide-react";
-import { useAppStore } from "../../../store/useAppStore";
+import { useTranslation } from "../../../store/useAppStore";
 
 interface AuthInputProps {
   label: string;
@@ -26,8 +26,7 @@ export function AuthInput({
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === "password";
   const currentType = isPassword ? (showPassword ? "text" : "password") : type;
-  const { lang } = useAppStore();
-  const isRtl = lang === "ar";
+  const { t, isRtl } = useTranslation();
 
   return (
     <div className="space-y-1">
@@ -71,7 +70,9 @@ export function AuthInput({
             className={`absolute top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 focus:outline-none ${
               isRtl ? "left-3.5" : "right-3.5"
             }`}
-            aria-label={showPassword ? "Hide password" : "Show password"}
+            aria-label={
+              showPassword ? t.authInput.hidePassword : t.authInput.showPassword
+            }
           >
             {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>

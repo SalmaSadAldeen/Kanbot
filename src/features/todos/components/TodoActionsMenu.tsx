@@ -49,12 +49,23 @@ export function TodoActionsMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const { t, isRtl } = useTranslation();
-  const safeDict = t.projectsPage?.backlogPage?.todoActions ?? {
-    edit: "Edit",
-    delete: "Delete",
+
+  // ── إصلاح TypeScript عبر إعطاء نمط كامل آمن للمفاتيح ──
+  const dict = t.projectsPage?.backlogPage?.todoActions as
+    | Record<string, string>
+    | undefined;
+  const safeDict = {
+    edit: dict?.edit ?? "Edit",
+    delete: dict?.delete ?? "Delete",
+    moveToTop: dict?.moveToTop ?? "Move to top",
+    moveToBottom: dict?.moveToBottom ?? "Move to bottom",
+    moveToBacklog: dict?.moveToBacklog ?? "Move to backlog",
+    moveToSprint: dict?.moveToSprint ?? "Move to sprint...",
+    selectSprint: dict?.selectSprint ?? "Select sprint",
+    back: dict?.back ?? "Back",
   };
 
-  // إغلاق القائمة حصراً عند النقر خارجها، أو إذا حصل سكرول خارج القائمة بالصفحة الأم
+  // إغلاق القائمة عند النقر خارجها أو السكرول خارجها
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -64,7 +75,6 @@ export function TodoActionsMenu({
     };
 
     const handleWindowScroll = (event: Event) => {
-      // إذا كان السكرول صاير برا القائمة تماماً، سكرها. أما لو بداخل القائمة فخلها شغال عادي.
       if (
         isOpen &&
         menuRef.current &&
@@ -154,7 +164,7 @@ export function TodoActionsMenu({
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <Edit size={14} className="text-indigo-500" />
-                <span>{safeDict.edit || "Edit"}</span>
+                <span>{safeDict.edit}</span>
               </button>
 
               {hasMoveActions && (
@@ -170,7 +180,7 @@ export function TodoActionsMenu({
                       className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                     >
                       <ArrowUp size={14} className="text-sky-500" />
-                      <span>{"Move to top"}</span>
+                      <span>{safeDict.moveToTop}</span>
                     </button>
                   )}
 
@@ -185,7 +195,7 @@ export function TodoActionsMenu({
                       className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                     >
                       <ArrowDown size={14} className="text-sky-500" />
-                      <span>{"Move to bottom"}</span>
+                      <span>{safeDict.moveToBottom}</span>
                     </button>
                   )}
 
@@ -200,7 +210,7 @@ export function TodoActionsMenu({
                       className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                     >
                       <ListTodo size={14} className="text-emerald-500" />
-                      <span>{"Move to backlog"}</span>
+                      <span>{safeDict.moveToBacklog}</span>
                     </button>
                   )}
 
@@ -215,7 +225,7 @@ export function TodoActionsMenu({
                     >
                       <div className="flex items-center gap-2">
                         <Layers size={14} className="text-violet-500" />
-                        <span>{"Move to sprint..."}</span>
+                        <span>{safeDict.moveToSprint}</span>
                       </div>
                       <ChevronRight size={14} className="text-slate-400" />
                     </button>
@@ -234,12 +244,12 @@ export function TodoActionsMenu({
                   className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                 >
                   <Trash2 size={14} />
-                  <span>{safeDict.delete || "Delete"}</span>
+                  <span>{safeDict.delete}</span>
                 </button>
               </div>
             </div>
           ) : (
-            /* ── قائمة السبرنتات الفرعية مع سكرول داخلي حر ── */
+            /* ── قائمة السبرنتات الفرعية ── */
             <div className="space-y-1">
               <div className="flex items-center justify-between border-b border-slate-200 pb-1.5 px-2 dark:border-slate-800">
                 <button
@@ -250,14 +260,13 @@ export function TodoActionsMenu({
                   }}
                   className="text-[11px] font-bold text-indigo-600 hover:underline dark:text-indigo-400 cursor-pointer flex items-center gap-1"
                 >
-                  ← Back
+                  ← {safeDict.back}
                 </button>
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Select Sprint
+                  {safeDict.selectSprint}
                 </span>
               </div>
 
-              {/* سكرول مستقل وثابت بداخل القائمة بدون أن تختفي عند تحريك الماوس أو السكرول */}
               <div
                 onWheel={(e) => e.stopPropagation()}
                 className="max-h-52 overflow-y-auto pr-1 space-y-0.5 custom-scrollbar"
