@@ -7,8 +7,7 @@ import { useAppStore, useTranslation } from "../../store/useAppStore";
 import { AiRoot } from "../../features/ai/AiRoot";
 
 export function AppShell() {
-  const { isMobileSidebarOpen, closeMobileSidebar, isCollapsed } =
-    useAppStore();
+  const { closeMobileSidebar, isCollapsed } = useAppStore();
   const { isRtl } = useTranslation();
   const location = useLocation();
 
@@ -18,33 +17,8 @@ export function AppShell() {
     }
   }, [location.pathname, closeMobileSidebar]);
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isMobileSidebarOpen) {
-        if (window.innerWidth < 1024) closeMobileSidebar();
-      }
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [isMobileSidebarOpen, closeMobileSidebar]);
-
-  useEffect(() => {
-    document.body.style.overflow =
-      isMobileSidebarOpen && window.innerWidth < 1024 ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isMobileSidebarOpen]);
-
-  // تحديد عرض السايد بار حسب حالة الطي (Collapsed أو مفتوح)
-  const sidebarWidthClass = isCollapsed ? "lg:w-16" : "lg:w-64";
-  const mainMarginClass = isRtl
-    ? isCollapsed
-      ? "lg:mr-16"
-      : "lg:mr-64"
-    : isCollapsed
-      ? "lg:ml-16"
-      : "lg:ml-64";
+  // تحديد عرض السايدبار بناءً على حالة الطي (مفتوحة 256px أو مسكرة 64px)
+  const sidebarWidth = isCollapsed ? "64px" : "256px";
 
   return (
     <div
@@ -54,27 +28,28 @@ export function AppShell() {
       <ToastProvider />
       <AiRoot />
 
+      {/* التوب بار في الأعلى */}
       <Topbar />
 
-      <div className="flex flex-1 relative overflow-hidden">
-        {isMobileSidebarOpen && (
-          <div
-            aria-hidden="true"
-            onClick={closeMobileSidebar}
-            className="fixed inset-0 top-16 z-20 bg-slate-900/50 backdrop-blur-sm lg:hidden"
-          />
-        )}
-
-        {/* السايد بار بموضع ثابت مطلق على الديسكتوب لا يتأثر بأي تدفق ولن يتحرك أبداً */}
+      {/* حاوية موحدة وثابتة للسايدبار والمحتوى */}
+      <div className="flex flex-1 relative overflow-hidden w-full">
+        {/* السايدبار يفتح ويغلق بسلاسة بناءً على زر الطي */}
         <div
-          className={`fixed lg:absolute top-0 bottom-0 ${isRtl ? "right-0" : "left-0"} z-30 h-full ${sidebarWidthClass} transition-none`}
+          className="z-30 h-full flex-shrink-0"
+          style={{
+            width: sidebarWidth,
+            minWidth: sidebarWidth,
+            maxWidth: sidebarWidth,
+            transition: "none",
+          }}
         >
-          <Sidebar />
+          <Sidebar isCollapsed={isCollapsed} />
         </div>
 
-        {/* المحتوى الرئيسي يأخذ مساحة فارغة تكتيكية تناسب عرض السايد بار تماماً */}
+        {/* المحتوى الرئيسي */}
         <main
-          className={`flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-4 sm:p-6 ${mainMarginClass} transition-none`}
+          className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden p-4 sm:p-6"
+          style={{ transition: "none" }}
         >
           <Outlet />
         </main>

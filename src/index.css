@@ -1,7 +1,11 @@
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
-
+.no-motion *,
+.no-motion *::before,
+.no-motion *::after {
+  transition: none !important;
+}
 @theme {
   --font-sans:
     Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,

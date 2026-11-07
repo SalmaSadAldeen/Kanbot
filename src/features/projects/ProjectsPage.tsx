@@ -54,7 +54,7 @@ export function ProjectsPage() {
     setIsFormOpen(true);
   };
 
-  // 1. عند الضغط على حذف: الكارد تظل مكانها ويتغير بوردر الكارد نفسها للبرتقالي مع ظهور زر التراجع بداخلها
+  // 1. عند الضغط على حذف
   const handleDeleteClick = (project: ProjectWithStats) => {
     setDeletingId(project.id);
     if (timeoutRef.current !== null) {
@@ -62,7 +62,7 @@ export function ProjectsPage() {
     }
     timeoutRef.current = window.setTimeout(() => {
       setDeletingId(null);
-      setProjectToDelete(project); // بعد انتهاء المهلة يفتح ديالوغ التأكيد
+      setProjectToDelete(project);
     }, 4000);
   };
 
@@ -75,13 +75,12 @@ export function ProjectsPage() {
     setDeletingId(null);
   };
 
-  // 3. التأكيد النهائي من الديالوغ وحذف المشروع مع إظهار توست النجاح مرة واحدة فقط
+  // 3. التأكيد النهائي من الديالوغ
   const handleConfirmDelete = async () => {
     if (!projectToDelete) return;
     setIsDeletingActive(true);
     try {
       await deleteProject(projectToDelete.id);
-
       setProjectToDelete(null);
     } finally {
       setIsDeletingActive(false);
@@ -174,25 +173,7 @@ export function ProjectsPage() {
           }
         />
       ) : filteredProjects.length === 0 ? (
-        <EmptyState
-          title={t.projectsPage.emptyTitle}
-          description={t.projectsPage.emptyDesc}
-          icon={
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 ring-1 ring-indigo-500/20 dark:bg-indigo-950/60 dark:text-indigo-400 dark:ring-indigo-400/20">
-              <FolderKanban size={28} />
-            </div>
-          }
-          action={
-            <Button
-              onClick={openCreate}
-              leftIcon={<Plus size={16} />}
-              className="mt-3 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-indigo-600/20 transition-all hover:bg-indigo-700 active:scale-95 dark:bg-indigo-600 dark:hover:bg-indigo-500 cursor-pointer"
-            >
-              {t.projectsPage.emptyAction}
-            </Button>
-          }
-        />
-      ) : filteredProjects.length === 0 ? (
+        // تم تصحيح هذا الشرط ليظهر مكون البحث الفارغ الصحيح بدلاً من الخطأ السابق
         <SearchEmptyState onClear={() => setSearchQuery("")} />
       ) : (
         <section className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">

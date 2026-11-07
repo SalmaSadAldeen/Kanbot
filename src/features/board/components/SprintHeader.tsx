@@ -6,13 +6,14 @@ import {
   CheckCircle2,
   Clock,
   Zap,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "../../../components/ui/Button";
 import type { Sprint } from "../../../types/api";
 import { useTranslation } from "../../../store/useAppStore";
 
-const ICON_SIZE = 14;
-const ICON_STROKE = 2;
+const ICON_SIZE = 15;
+const ICON_STROKE = 2.2;
 
 interface SprintHeaderProps {
   sprint: Sprint;
@@ -25,7 +26,12 @@ interface SprintHeaderProps {
 function formatDate(dateStr: string | null, locale: string): string {
   if (!dateStr) return "—";
   try {
-    return new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).format(parseISO(dateStr));
+    return new Intl.DateTimeFormat(locale, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC",
+    }).format(parseISO(dateStr));
   } catch {
     return dateStr;
   }
@@ -49,10 +55,16 @@ interface ProgressBarProps {
 function ProgressBar({ value, colorClass, trackClass }: ProgressBarProps) {
   const pct = Math.min(100, Math.max(0, value));
   return (
-      <div className={`relative h-1.5 w-full overflow-hidden rounded-full ${trackClass}`} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}>
+    <div
+      className={`relative h-2 w-full overflow-hidden rounded-full ${trackClass} shadow-inner`}
+      role="progressbar"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={pct}
+    >
       <div
-        className={`absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out ${colorClass}`}
-        style={{ width: `${pct}%`, insetInlineStart: 0 }}
+        className={`absolute inset-y-0 start-0 rounded-full transition-all duration-1000 ease-out ${colorClass}`}
+        style={{ width: `${pct}%` }}
       />
     </div>
   );
@@ -68,19 +80,27 @@ interface StatChipProps {
   barTrack: string;
   pctColor: string;
 }
-function StatChip({ label, value, pct, icon, barColor, barTrack, pctColor }: StatChipProps) {
+function StatChip({
+  label,
+  value,
+  pct,
+  icon,
+  barColor,
+  barTrack,
+  pctColor,
+}: StatChipProps) {
   return (
-    <div className="flex min-w-[160px] flex-1 flex-col gap-1.5">
+    <div className="flex min-w-[180px] flex-1 flex-col gap-2 transition-transform duration-300 hover:scale-[1.01]">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
           {icon}
           {label}
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200">
+          <span className="text-xs font-black text-slate-800 dark:text-slate-100">
             {value}
           </span>
-          <span className={`text-[11px] font-bold tabular-nums ${pctColor}`}>
+          <span className={`text-xs font-black tabular-nums ${pctColor}`}>
             {pct}%
           </span>
         </div>
@@ -111,9 +131,7 @@ export function SprintHeader({
       ? Math.round((stats.doneTodos / stats.totalTodos) * 100)
       : 0;
 
-  // حساب المهام غير المنتهية (التلسين أو الترحيل للباكلوج)
   const unfinishedTodos = stats.totalTodos - stats.doneTodos;
-
   const remaining = daysRemaining(sprint.endDate);
 
   const daysLabel =
@@ -127,89 +145,112 @@ export function SprintHeader({
 
   const daysChipClass =
     remaining === null
-      ? "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+      ? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
       : remaining > 3
-        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
+        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200/50"
         : remaining >= 0
-          ? "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400"
-          : "bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-400";
+          ? "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200/50"
+          : "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200/50";
 
   return (
-    <div className="mb-6 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-
-      {/* Thin accent bar — Jira style */}
-      <div className="h-[3px] w-full bg-gradient-to-r from-indigo-500 via-violet-500 to-indigo-400" />
+    <div className="mb-6 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-md transition-all duration-300 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900">
+      {/* خط علوي حيوي بلون أزرق نقي (بدون أي موف) */}
+      <div className="h-[3px] w-full bg-gradient-to-r from-blue-600 via-sky-500 to-indigo-600" />
 
       <div className="p-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           {/* Left block */}
-          <div className="min-w-0 space-y-2">
+          <div className="min-w-0 space-y-2.5">
             <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-lg font-black tracking-tight text-slate-900 dark:text-slate-50 sm:text-xl">
+              <h1 className="text-xl font-black tracking-tight text-slate-900 dark:text-slate-50 sm:text-2xl">
                 {sprint.name}
               </h1>
 
-              <span className="inline-flex h-5 items-center gap-1 rounded-full bg-emerald-100 pl-1.5 pr-2.5 text-[10px] font-bold uppercase tracking-widest text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
+              <span className="inline-flex h-6 items-center gap-1.5 rounded-full bg-emerald-100 px-3 text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300 shadow-2xs">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                 {bd.active}
               </span>
 
               <span
-                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${daysChipClass}`}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[11px] font-bold shadow-2xs ${daysChipClass}`}
               >
-                <Clock size={10} strokeWidth={2.5} />
+                <Clock size={ICON_SIZE} strokeWidth={ICON_STROKE} />
                 {daysLabel}
               </span>
 
-              {/* تنبيه إذا كان هناك مهام غير منتهية */}
               {unfinishedTodos > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60">
-                  ⚠️ {bd.unfinishedWarning.replace("{n}", String(unfinishedTodos))}
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-0.5 text-[11px] font-bold text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60">
+                  <AlertTriangle
+                    size={14}
+                    strokeWidth={2.2}
+                    className="shrink-0 text-amber-600 dark:text-amber-400"
+                  />
+                  {bd.unfinishedWarning.replace("{n}", String(unfinishedTodos))}
                 </span>
               )}
             </div>
 
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-            <CalendarRange size={ICON_SIZE} strokeWidth={ICON_STROKE} aria-hidden="true" className="shrink-0 text-slate-400" />
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+              <CalendarRange
+                size={ICON_SIZE}
+                strokeWidth={ICON_STROKE}
+                aria-hidden="true"
+                className="shrink-0 text-blue-500"
+              />
               <span>
-                {formatDate(sprint.startDate, lang)}&nbsp;&mdash;&nbsp;{formatDate(sprint.endDate, lang)}
+                {formatDate(sprint.startDate, lang)}&nbsp;&mdash;&nbsp;
+                {formatDate(sprint.endDate, lang)}
               </span>
             </div>
 
             {sprint.goal && (
-              <div className="flex items-start gap-1.5 pt-0.5">
+              <div className="flex items-start gap-2 pt-1">
                 <Target
-                  size={13}
-                  className="mt-0.5 shrink-0 text-indigo-500 dark:text-indigo-400"
+                  size={ICON_SIZE}
+                  strokeWidth={ICON_STROKE}
+                  className="mt-0.5 shrink-0 text-blue-600 dark:text-blue-400"
                 />
-                <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-                  <span className="font-semibold">{bd.sprintGoalLabel}:</span>{" "}
+                <p className="text-xs font-medium leading-relaxed text-slate-600 dark:text-slate-300">
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    {bd.sprintGoalLabel}:
+                  </span>{" "}
                   {sprint.goal}
                 </p>
               </div>
             )}
           </div>
 
-          {/* Right: action buttons */}
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {/* Right: action buttons مع تأثير حركي خفيف عند التمرير */}
+          <div className="flex shrink-0 flex-wrap items-center gap-2.5">
             <Button
               variant="outline"
               size="sm"
-              leftIcon={<Sparkles size={13} />}
+              leftIcon={
+                <Sparkles
+                  size={14}
+                  strokeWidth={2.2}
+                  className="text-blue-500"
+                />
+              }
               onClick={onSummarize}
-              className="h-8 rounded-lg text-xs font-semibold cursor-pointer"
+              className="h-9 rounded-xl text-xs font-bold transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-2xs hover:border-blue-300"
             >
               {bd.summarize}
             </Button>
 
-            {/* زر إنهاء السبرنت المرتبط مباشرة بالهوك */}
             <Button
               variant="primary"
               size="sm"
-              leftIcon={<CheckCircle2 size={13} className="shrink-0" />}
+              leftIcon={
+                <CheckCircle2
+                  size={14}
+                  strokeWidth={2.2}
+                  className="shrink-0"
+                />
+              }
               onClick={onCompleteSprint}
               isLoading={isCompleting}
-              className="h-8 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-sm"
+              className="h-9 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-md shadow-emerald-600/20"
             >
               {bd.completeSprint}
             </Button>
@@ -217,15 +258,15 @@ export function SprintHeader({
         </div>
 
         {/* Progress stats */}
-        <div className="mt-5 flex flex-wrap gap-4 border-t border-slate-100 pt-5 dark:border-slate-800">
+        <div className="mt-6 flex flex-wrap gap-6 border-t border-slate-100 pt-5 dark:border-slate-800">
           <StatChip
             label={bd.storyPointsLabel}
             value={`${stats.donePoints} / ${stats.totalPoints} ${bd.pts}`}
             pct={pointsPct}
-            icon={<Zap size={11} strokeWidth={2.5} className="text-indigo-500" />}
-            barColor="bg-indigo-500 dark:bg-indigo-400"
-            barTrack="bg-indigo-100 dark:bg-indigo-950/40"
-            pctColor="text-indigo-600 dark:text-indigo-400"
+            icon={<Zap size={14} strokeWidth={2.5} className="text-blue-500" />}
+            barColor="bg-gradient-to-r from-blue-600 to-sky-500"
+            barTrack="bg-blue-100 dark:bg-blue-950/50"
+            pctColor="text-blue-600 dark:text-blue-400"
           />
 
           <div className="hidden w-px self-stretch bg-slate-200 dark:bg-slate-800 sm:block" />
@@ -234,9 +275,15 @@ export function SprintHeader({
             label={bd.tasksLabel}
             value={`${stats.doneTodos} / ${stats.totalTodos} ${bd.done}`}
             pct={todosPct}
-            icon={<CheckCircle2 size={11} strokeWidth={2.5} className="text-emerald-500" />}
-            barColor="bg-emerald-500 dark:bg-emerald-400"
-            barTrack="bg-emerald-100 dark:bg-emerald-950/40"
+            icon={
+              <CheckCircle2
+                size={14}
+                strokeWidth={2.5}
+                className="text-emerald-500"
+              />
+            }
+            barColor="bg-gradient-to-r from-emerald-500 to-teal-500"
+            barTrack="bg-emerald-100 dark:bg-emerald-950/50"
             pctColor="text-emerald-600 dark:text-emerald-400"
           />
         </div>

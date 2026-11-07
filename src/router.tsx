@@ -36,11 +36,6 @@ const BoardPage = React.lazy(() =>
     default: mod.BoardPage,
   })),
 );
-const SettingsPage = React.lazy(() =>
-  import("./features/settings/SettingsPage").then((mod) => ({
-    default: mod.SettingsPage,
-  })),
-);
 
 // استخدام الـ Spinner المخصص الخاص بكِ لضمان ثبات الشكل وعدم حدوث رجة
 function RouteFallback() {
@@ -131,12 +126,7 @@ export const router = createBrowserRouter([
             ),
           },
           {
-            path: "/settings",
-            element: (
-              <Suspense fallback={<RouteFallback />}>
-                <SettingsPage />
-              </Suspense>
-            ),
+          
           },
         ],
       },

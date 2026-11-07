@@ -19,18 +19,19 @@ interface AppState {
   setLastProjectId: (id: string | null) => void;
 }
 
+// useAppStore.ts
 const applyThemeAndLang = (theme: Theme, lang: Language) => {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
-  if (theme === "dark") {
-    root.classList.add("dark");
-  } else {
-    root.classList.remove("dark");
-  }
+  root.classList.add("no-motion"); // يوقف كل الانتقالات
+  root.classList.toggle("dark", theme === "dark");
   root.dir = lang === "ar" ? "rtl" : "ltr";
   root.lang = lang;
+  // بعد ما يرسم المتصفح الفريم الجديد، نرجّع الحركة
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => root.classList.remove("no-motion")),
+  );
 };
-
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
@@ -59,12 +60,8 @@ export const useAppStore = create<AppState>()(
       },
 
       toggleSidebar: () => {
-        if (typeof window !== "undefined" && window.innerWidth < 1024) {
-          set({ isMobileSidebarOpen: !get().isMobileSidebarOpen });
-        } else {
-          // على الشاشات الكبيرة والمتوسطة، يتحكم بالطي والتوسيع فقط ولا يغلق أبداً إلا برغبتك
-          set({ isCollapsed: !get().isCollapsed });
-        }
+        // التحكم بالطي والتوسيع مباشرة ليشتغل بكل الشاشات بسلاسة
+        set({ isCollapsed: !get().isCollapsed });
       },
 
       closeMobileSidebar: () => set({ isMobileSidebarOpen: false }),

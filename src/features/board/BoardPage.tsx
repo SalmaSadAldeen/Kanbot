@@ -11,7 +11,7 @@ import {
 } from "@dnd-kit/core";
 import type { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { Kanban, ListTodo } from "lucide-react";
+import { Kanban, ListTodo, GripVertical, Keyboard } from "lucide-react";
 
 import { useProject } from "../../hooks/useProjects";
 import { useBoard } from "../../hooks/useBoard";
@@ -45,7 +45,7 @@ function toStatus(droppableId: string): TodoStatus | null {
 export function BoardPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, isRtl } = useTranslation();
   const board = t.projectsPage.boardPage;
   const openSummary = useAiUi((s) => s.openSummary);
   const summarizeSprint = useSprintSummary();
@@ -75,6 +75,9 @@ export function BoardPage() {
   const [activeDragTodo, setActiveDragTodo] = useState<Todo | null>(null);
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
   const [dragAnnouncement, setDragAnnouncement] = useState("");
+
+  // حالة لإظهار وإخفاء التوريال الخاص بالحركة والسحب
+  const [showTutorial] = useState(true);
 
   const openDetail = useCallback((todo: Todo) => {
     setSelectedTodo(todo);
@@ -114,15 +117,19 @@ export function BoardPage() {
 
     if (targetStatus) {
       const targetCol = columns[targetStatus];
-      const position = targetCol.length - (draggedTodo.status === targetStatus ? 1 : 0);
-      if (draggedTodo.status === targetStatus && draggedTodo.order === position) return;
+      const position =
+        targetCol.length - (draggedTodo.status === targetStatus ? 1 : 0);
+      if (draggedTodo.status === targetStatus && draggedTodo.order === position)
+        return;
 
       void moveCard(draggedTodo.id, {
         status: targetStatus,
         position,
         sprintId: draggedTodo.sprintId ?? undefined,
       });
-      setDragAnnouncement(`${draggedTodo.key} ${board.dragMovedTo} ${board.columns[targetStatus]}`);
+      setDragAnnouncement(
+        `${draggedTodo.key} ${board.dragMovedTo} ${board.columns[targetStatus]}`,
+      );
       return;
     }
 
@@ -132,7 +139,7 @@ export function BoardPage() {
 
     for (const status of TODO_STATUSES) {
       const col = columns[status];
-      const idx = col.findIndex((t) => t.id === overId);
+      const idx = col.findIndex((item) => item.id === overId);
       if (idx !== -1) {
         targetCol = col;
         targetColStatus = status;
@@ -162,7 +169,9 @@ export function BoardPage() {
       position,
       sprintId: draggedTodo.sprintId ?? undefined,
     });
-    setDragAnnouncement(`${draggedTodo.key} ${board.dragMovedTo} ${board.columns[targetColStatus]}`);
+    setDragAnnouncement(
+      `${draggedTodo.key} ${board.dragMovedTo} ${board.columns[targetColStatus]}`,
+    );
   }
 
   // 7. Complete sprint confirmation handler
@@ -181,8 +190,14 @@ export function BoardPage() {
     setIsCompleteModalOpen(false);
     void refetch();
     if (generateSummary) {
-      try { await summarizeSprint.mutateAsync(sprint.id); toast.success(t.ai.summaryReady); }
-      catch (error) { toast.error(error instanceof Error ? error.message : t.ai.summaryFailed); }
+      try {
+        await summarizeSprint.mutateAsync(sprint.id);
+        toast.success(t.ai.summaryReady);
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : t.ai.summaryFailed,
+        );
+      }
     }
     navigate(`/projects/${projectId}/sprints/${sprint.id}`);
   };
@@ -191,8 +206,24 @@ export function BoardPage() {
 
   if (projectQuery.isLoading || (activeSprintId && isLoading)) {
     return (
-      <div className="grid min-h-[60vh] grid-cols-4 gap-4 overflow-hidden" aria-label={board.loading}>
-        {TODO_STATUSES.map((status) => <section key={status} className="min-w-[220px] animate-pulse rounded-xl bg-slate-100 p-3 dark:bg-slate-900"><div className="mb-4 h-6 w-2/3 rounded bg-slate-200 dark:bg-slate-800" />{[0,1,2].map((n)=><div key={n} className="mb-3 h-24 rounded-lg bg-slate-200 dark:bg-slate-800" />)}</section>)}
+      <div
+        className="grid min-h-[60vh] grid-cols-4 gap-6 overflow-hidden"
+        aria-label={board.loading}
+      >
+        {TODO_STATUSES.map((status) => (
+          <section
+            key={status}
+            className="min-w-[220px] animate-pulse rounded-xl bg-slate-100 p-3 dark:bg-slate-900"
+          >
+            <div className="mb-4 h-6 w-2/3 rounded bg-slate-200 dark:bg-slate-800" />
+            {[0, 1, 2].map((n) => (
+              <div
+                key={n}
+                className="mb-3 h-24 rounded-lg bg-slate-200 dark:bg-slate-800"
+              />
+            ))}
+          </section>
+        ))}
       </div>
     );
   }
@@ -236,7 +267,9 @@ export function BoardPage() {
 
   if (!sprint || !columns) {
     return (
-      <div role="status" className="p-8 text-center text-sm text-slate-500">{board.loading}</div>
+      <div role="status" className="p-8 text-center text-sm text-slate-500">
+        {board.loading}
+      </div>
     );
   }
 
@@ -255,16 +288,41 @@ export function BoardPage() {
         isCompleting={completeSprint.isPending}
       />
 
+      {/* تعليمات وتوريال الحركة والسحب والإفلات مع مسافة واضحة ومريحة للأعلى والأسفل */}
+      {showTutorial && (
+        <div className="my-5 mb-8 flex items-center justify-between rounded-xl border border-indigo-200 bg-indigo-50/70 px-4 py-3 text-xs font-medium text-indigo-900 shadow-xs dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-200">
+          <div className="flex items-center gap-2.5">
+            <GripVertical
+              size={16}
+              className="shrink-0 text-indigo-600 dark:text-indigo-400"
+            />
+            <span>
+              {isRtl
+                ? "تلميح: اسحب وأفلت المهام لترتيبها، أو استخدم مفاتيح الأسهم (Space/Enter للإمساك وEscape للإلغاء) لسهولة الوصول."
+                : "Tip: Drag & drop tasks to reorder, or use keyboard arrows (Space/Enter to lift, Escape to cancel) for accessibility."}
+            </span>
+          </div>
+
+          <Keyboard
+            size={15}
+            className="ms-auto shrink-0 text-indigo-500 opacity-80"
+          />
+        </div>
+      )}
+
       {/* ── Columns area ─────────────────────────────────────────────────── */}
       <div className="min-h-0 flex-1 overflow-x-auto pb-4">
-        <div className="sr-only" aria-live="assertive" aria-atomic="true">{dragAnnouncement}</div>
+        <div className="sr-only" aria-live="assertive" aria-atomic="true">
+          {dragAnnouncement}
+        </div>
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="grid min-w-[760px] grid-cols-4 gap-3 sm:gap-4">
+          {/* الفراغ بين الأعمدة */}
+          <div className="grid min-w-[880px] grid-cols-4 gap-6 sm:gap-8">
             {TODO_STATUSES.map((status) => (
               <BoardColumn
                 key={status}

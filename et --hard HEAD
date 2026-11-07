@@ -1,0 +1,20 @@
+[33m97b67ed[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature/testing-and-requirements[m[33m, [m[1;31morigin/feature/testing-and-requirements[m[33m)[m test: complete Sprints and Board (SPR) module verification, fix empty/error states, and localization
+[33m48c6c8d[m test: complete Sprints and Board (SPR) module verification, fix empty/error states, and localization
+[33me27ca69[m test(backlog): verify backlog and todos functionality, debounced search, and dialog focus UX
+[33m82ad7ed[m test(projects): verify and finalize projects module testing (PRJ-1 to PRJ-5)
+[33ma1195a7[m test: test and verify authentication & navigation flow for the first feature
+[33m734506b[m[33m ([m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m)[m chore: prepare codebase for testing phase
+[33m2c1d00a[m fix Sidebar
+[33m5d0fc39[m build done
+[33mbbd9b02[m feat :ai
+[33m4488794[m feat :UI/UX and check all pro and fix bugs
+[33m545d617[m feat(board) done
+[33m11ae25f[m Board UI/UX Done
+[33ma52c6f8[m logic board done
+[33md10c250[m feat(sprints)
+[33maae06c4[m feat(backlog)
+[33m107b449[m feat(sprints): finalize start sprint feature with validation, date dialog
+[33m41a35a1[m refactor(ui): polish SaaS layout shell, fix backlog filtering artifacts and refine todo details drawer
+[33m7279c86[m feat: add 4-second undo delete mechanism, sidebar enhancements, and keyboard shortcuts
+[33mbc2f1e6[m feat(projects): implement robust project form with Zod validation, React Hook Form, and clean architecture
+[33m55de7d9[m feat(auth): finalize enterprise auth UI, layout components, and validation logic
