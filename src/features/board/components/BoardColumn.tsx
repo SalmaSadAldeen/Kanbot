@@ -69,7 +69,6 @@ interface BoardColumnProps {
   onOpenTodo: (todo: Todo) => void;
   isMoving?: boolean;
 }
-
 export function BoardColumn({
   status,
   todos,
@@ -87,12 +86,11 @@ export function BoardColumn({
   const cardIds = todos.map((item) => item.id);
 
   return (
-    <div className="flex min-w-[240px] flex-1 flex-col rounded-2xl border border-slate-200/80 bg-white/60 shadow-xs backdrop-blur-xs dark:border-slate-800 dark:bg-slate-950/40">
-      {/* ── Column header ─────────────────────────────────────────────────── */}
+    <div className="flex h-full min-h-0 min-w-[240px] flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white/60 shadow-xs backdrop-blur-xs dark:border-slate-800 dark:bg-slate-950/40">
+      {/* ── Column header (ثابت) ── */}
       <div
-        className={`overflow-hidden rounded-t-2xl border-b border-slate-200/60 dark:border-slate-800/80 ${style.headerBg}`}
+        className={`shrink-0 overflow-hidden rounded-t-2xl border-b border-slate-200/60 dark:border-slate-800/80 ${style.headerBg}`}
       >
-        {/* Top accent bar */}
         <div className={`h-[3px] w-full ${style.accentBar}`} />
 
         <div className="flex items-center justify-between px-3.5 py-3">
@@ -101,7 +99,6 @@ export function BoardColumn({
           >
             {label}
           </span>
-          {/* Task count pill */}
           <span
             className={`min-w-[24px] rounded-full px-2 py-0.5 text-center text-[10px] font-black tabular-nums shadow-2xs ${style.countBg} ${style.countText}`}
           >
@@ -110,24 +107,21 @@ export function BoardColumn({
         </div>
       </div>
 
-      {/* ── Drop zone ─────────────────────────────────────────────────────── */}
+      {/* ── Drop zone (هاد بس اللي بيسكرول) ── */}
       <div
         ref={setNodeRef}
         className={[
-          "flex flex-1 flex-col gap-2.5 rounded-b-2xl p-2.5",
-          "min-h-[280px] transition-all duration-200",
+          "flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto overscroll-contain rounded-b-2xl p-2.5",
+          "transition-colors duration-200",
           isOver ? `${style.overBg} ${style.overRing}` : style.bodyBg,
         ].join(" ")}
       >
         <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
           {todos.length > 0 ? (
             todos.map((todo) => (
-              <TodoCard
-                key={todo.id}
-                todo={todo}
-                onOpen={onOpenTodo}
-                isMoving={isMoving}
-              />
+              <div key={todo.id} className="shrink-0">
+                <TodoCard todo={todo} onOpen={onOpenTodo} isMoving={isMoving} />
+              </div>
             ))
           ) : (
             <div

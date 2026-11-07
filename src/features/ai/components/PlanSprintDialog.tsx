@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams } from "react-router";
-import { Sparkles, Calendar, Target, Layers } from "lucide-react";
+import {  Calendar, Target, Layers } from "lucide-react";
 import { Dialog } from "../../../components/ui/Dialog";
 import { Button } from "../../../components/ui/Button";
 import { usePlanSprint } from "../../../hooks/useAi";
@@ -88,7 +88,6 @@ export function PlanSprintDialog() {
               size="sm"
               className="gap-1.5 rounded-xl shadow-md shadow-indigo-600/20"
             >
-              <Sparkles size={15} />
               <span>{c.suggest}</span>
             </Button>
           </div>
@@ -192,9 +191,9 @@ export function PlanSprintDialog() {
                 onClick={create}
                 disabled={createSprint.isPending || !goal.trim()}
                 isLoading={createSprint.isPending}
+                leftIcon={<Calendar size={16} />}
                 className="gap-2 rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-700 transition-all"
               >
-                <Calendar size={16} />
                 <span>
                   {c.createWithTodos.replace("{n}", String(checked.length))}
                 </span>

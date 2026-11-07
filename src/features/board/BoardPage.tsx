@@ -50,14 +50,11 @@ export function BoardPage() {
   const openSummary = useAiUi((s) => s.openSummary);
   const summarizeSprint = useSprintSummary();
 
-  // 1. Resolve active sprint id from project stats
   const projectQuery = useProject(projectId ?? "");
   const activeSprintId = projectQuery.data?.stats.activeSprint?.id;
 
-  // 2. Fetch sprints data and mutations (completeSprint, etc.)
   const { allSprints, completeSprint } = useSprints(projectId);
 
-  // 3. Fetch the board layout for the active sprint (فقط إذا وجد activeSprintId حصراً لمنع أخطاء الـ API)
   const boardQuery = useBoard(activeSprintId ?? "");
   const {
     sprint,
@@ -70,7 +67,6 @@ export function BoardPage() {
     isMoving,
   } = boardQuery;
 
-  // 4. Local UI state
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [activeDragTodo, setActiveDragTodo] = useState<Todo | null>(null);
@@ -89,7 +85,6 @@ export function BoardPage() {
     setSelectedTodo(null);
   }, []);
 
-  // 5. dnd-kit sensors
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, {
@@ -97,7 +92,6 @@ export function BoardPage() {
     }),
   );
 
-  // 6. Drag handlers
   function handleDragStart(event: DragStartEvent) {
     const todo = (event.active.data.current as { todo?: Todo })?.todo;
     setActiveDragTodo(todo ?? null);
@@ -174,7 +168,6 @@ export function BoardPage() {
     );
   }
 
-  // 7. Complete sprint confirmation handler
   const handleCompleteConfirm = async (
     targetSprintId: string | null,
     generateSummary: boolean,
@@ -228,7 +221,6 @@ export function BoardPage() {
     );
   }
 
-  // إذا ما في سبرنت نشط أصلاً، نعرض مباشرة واجهة الـ EmptyState الفخمة بدون ما نعمل جلب للبورد الخاطئ
   if (!activeSprintId) {
     return (
       <EmptyState
@@ -304,18 +296,19 @@ export function BoardPage() {
 
   // ── Main board ─────────────────────────────────────────────────────────────
   return (
-    <div className="flex h-full flex-col">
-      {/* Sprint header */}
-      <SprintHeader
-        sprint={sprint}
-        onCompleteSprint={() => setIsCompleteModalOpen(true)}
-        onSummarize={() => openSummary(sprint.id)}
-        isCompleting={completeSprint.isPending}
-      />
+    <div className="flex h-full min-h-0 flex-col">
+      {/* Sprint header (ثابت الحجم) */}
+      <div className="shrink-0">
+        <SprintHeader
+          sprint={sprint}
+          onCompleteSprint={() => setIsCompleteModalOpen(true)}
+          onSummarize={() => openSummary(sprint.id)}
+          isCompleting={completeSprint.isPending}
+        />
+      </div>
 
-      {/* تعليمات وتوريال الحركة والسحب والإفلات */}
       {showTutorial && (
-        <div className="my-5 mb-8 flex items-center justify-between rounded-xl border border-indigo-200 bg-indigo-50/70 px-4 py-3 text-xs font-medium text-indigo-900 shadow-xs dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-200">
+        <div className="my-5 mb-8 flex shrink-0 items-center justify-between rounded-xl border border-indigo-200 bg-indigo-50/70 px-4 py-3 text-xs font-medium text-indigo-900 shadow-xs dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-200">
           <div className="flex items-center gap-2.5">
             <GripVertical
               size={16}
@@ -335,8 +328,8 @@ export function BoardPage() {
         </div>
       )}
 
-      {/* ── Columns area ─────────────────────────────────────────────────── */}
-      <div className="min-h-0 flex-1 overflow-x-auto pb-4">
+      {/* ── Columns area: سكرول أفقي فقط، والسكرول العمودي جوا كل عمود ── */}
+      <div className="min-h-[420px] flex-1 overflow-x-auto overflow-y-hidden pb-4">
         <div className="sr-only" aria-live="assertive" aria-atomic="true">
           {dragAnnouncement}
         </div>
@@ -346,7 +339,7 @@ export function BoardPage() {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="grid min-w-[880px] grid-cols-4 gap-6 sm:gap-8">
+          <div className="grid h-full min-w-[880px] grid-cols-4 grid-rows-[minmax(0,1fr)] gap-6 sm:gap-8">
             {TODO_STATUSES.map((status) => (
               <BoardColumn
                 key={status}
@@ -358,7 +351,6 @@ export function BoardPage() {
             ))}
           </div>
 
-          {/* Floating ghost card rendered by dnd-kit during drag */}
           <DragOverlay dropAnimation={null}>
             {activeDragTodo ? (
               <div className="w-56 rotate-1 opacity-95 drop-shadow-2xl">
@@ -374,7 +366,6 @@ export function BoardPage() {
         </DndContext>
       </div>
 
-      {/* Todo details side-panel */}
       {projectId && (
         <TodoDetailsDialog
           key={selectedTodo?.id ?? "closed"}
@@ -386,7 +377,6 @@ export function BoardPage() {
         />
       )}
 
-      {/* Complete Sprint Modal */}
       {sprint && (
         <CompleteSprintDialog
           isOpen={isCompleteModalOpen}
