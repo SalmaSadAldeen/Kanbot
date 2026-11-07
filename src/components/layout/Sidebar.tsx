@@ -1,6 +1,12 @@
 import { useMemo } from "react";
 import { NavLink, useParams, useNavigate, useLocation } from "react-router";
-import { ListTodo, PlayCircle, Zap, FolderKanban } from "lucide-react";
+import {
+  ListTodo,
+  PlayCircle,
+  Zap,
+  FolderKanban,
+  BarChart3,
+} from "lucide-react";
 import { useTranslation, useAppStore } from "../../store/useAppStore";
 import { ProjectSwitcher } from "../../features/projects/components/ProjectSwitcher";
 import { useAuth } from "../../features/auth/AuthProvider";
@@ -35,7 +41,6 @@ export function Sidebar({ isCollapsed = false }: SidebarProps) {
     projectId && projectId !== "select" && projectId !== "projects",
   );
   const currentPath = location.pathname;
-
   const projectNavigation = useMemo(
     () => [
       {
@@ -63,8 +68,11 @@ export function Sidebar({ isCollapsed = false }: SidebarProps) {
         icon: Zap,
         exact: true,
         requiresProject: true,
-        isCustomActive: currentPath.includes("/sprints"),
+        isCustomActive:
+          currentPath.includes("/sprints") &&
+          !currentPath.includes("/analytics"),
       },
+
       {
         id: "nav-projects",
         name: t?.nav?.projects ?? "Projects",
@@ -75,10 +83,18 @@ export function Sidebar({ isCollapsed = false }: SidebarProps) {
         isCustomActive:
           currentPath === "/projects" || currentPath === "/" || !isValidProject,
       },
+      {
+        id: "nav-analytics",
+        name: t?.nav?.analytics ?? "Analytics",
+        href: isValidProject ? `/projects/${projectId}/analytics` : "/projects",
+        icon: BarChart3,
+        exact: true,
+        requiresProject: true,
+        isCustomActive: currentPath.includes("/analytics"),
+      },
     ],
     [isValidProject, projectId, t, currentPath],
   );
-
   const handleNavClick = (e: React.MouseEvent, requiresProject: boolean) => {
     if (requiresProject && !isValidProject) {
       e.preventDefault();

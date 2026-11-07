@@ -57,7 +57,8 @@ export function BoardPage() {
   // 2. Fetch sprints data and mutations (completeSprint, etc.)
   const { allSprints, completeSprint } = useSprints(projectId);
 
-  // 3. Fetch the board layout for the active sprint
+  // 3. Fetch the board layout for the active sprint (فقط إذا وجد activeSprintId حصراً لمنع أخطاء الـ API)
+  const boardQuery = useBoard(activeSprintId ?? "");
   const {
     sprint,
     columns,
@@ -67,7 +68,7 @@ export function BoardPage() {
     refetch,
     moveCard,
     isMoving,
-  } = useBoard(activeSprintId);
+  } = boardQuery;
 
   // 4. Local UI state
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
@@ -76,7 +77,6 @@ export function BoardPage() {
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
   const [dragAnnouncement, setDragAnnouncement] = useState("");
 
-  // حالة لإظهار وإخفاء التوريال الخاص بالحركة والسحب
   const [showTutorial] = useState(true);
 
   const openDetail = useCallback((todo: Todo) => {
@@ -204,7 +204,49 @@ export function BoardPage() {
 
   // ── Render states ──────────────────────────────────────────────────────────
 
-  if (projectQuery.isLoading || (activeSprintId && isLoading)) {
+  if (projectQuery.isLoading) {
+    return (
+      <div
+        className="grid min-h-[60vh] grid-cols-4 gap-6 overflow-hidden"
+        aria-label={board.loading}
+      >
+        {TODO_STATUSES.map((status) => (
+          <section
+            key={status}
+            className="min-w-[220px] animate-pulse rounded-xl bg-slate-100 p-3 dark:bg-slate-900"
+          >
+            <div className="mb-4 h-6 w-2/3 rounded bg-slate-200 dark:bg-slate-800" />
+            {[0, 1, 2].map((n) => (
+              <div
+                key={n}
+                className="mb-3 h-24 rounded-lg bg-slate-200 dark:bg-slate-800"
+              />
+            ))}
+          </section>
+        ))}
+      </div>
+    );
+  }
+
+  // إذا ما في سبرنت نشط أصلاً، نعرض مباشرة واجهة الـ EmptyState الفخمة بدون ما نعمل جلب للبورد الخاطئ
+  if (!activeSprintId) {
+    return (
+      <EmptyState
+        title={board.noActiveSprint}
+        description={board.noActiveSprintDesc}
+        icon={<Kanban size={40} className="text-indigo-500" />}
+        action={
+          <Link to={`/projects/${projectId ?? ""}/backlog`}>
+            <Button variant="primary" leftIcon={<ListTodo size={16} />}>
+              {board.goToBacklog}
+            </Button>
+          </Link>
+        }
+      />
+    );
+  }
+
+  if (isLoading) {
     return (
       <div
         className="grid min-h-[60vh] grid-cols-4 gap-6 overflow-hidden"
@@ -248,23 +290,6 @@ export function BoardPage() {
     );
   }
 
-  if (!activeSprintId) {
-    return (
-      <EmptyState
-        title={board.noActiveSprint}
-        description={board.noActiveSprintDesc}
-        icon={<Kanban size={40} className="text-indigo-500" />}
-        action={
-          <Link to={`/projects/${projectId ?? ""}/backlog`}>
-            <Button variant="primary" leftIcon={<ListTodo size={16} />}>
-              {board.goToBacklog}
-            </Button>
-          </Link>
-        }
-      />
-    );
-  }
-
   if (!sprint || !columns) {
     return (
       <div role="status" className="p-8 text-center text-sm text-slate-500">
@@ -288,7 +313,7 @@ export function BoardPage() {
         isCompleting={completeSprint.isPending}
       />
 
-      {/* تعليمات وتوريال الحركة والسحب والإفلات مع مسافة واضحة ومريحة للأعلى والأسفل */}
+      {/* تعليمات وتوريال الحركة والسحب والإفلات */}
       {showTutorial && (
         <div className="my-5 mb-8 flex items-center justify-between rounded-xl border border-indigo-200 bg-indigo-50/70 px-4 py-3 text-xs font-medium text-indigo-900 shadow-xs dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-200">
           <div className="flex items-center gap-2.5">
@@ -321,7 +346,6 @@ export function BoardPage() {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          {/* الفراغ بين الأعمدة */}
           <div className="grid min-w-[880px] grid-cols-4 gap-6 sm:gap-8">
             {TODO_STATUSES.map((status) => (
               <BoardColumn
@@ -358,7 +382,7 @@ export function BoardPage() {
           projectId={projectId}
           isOpen={isDetailOpen}
           onClose={closeDetail}
-          sprints={allSprints}
+          sprints={allSprints.filter((s) => s.status !== "completed")}
         />
       )}
 

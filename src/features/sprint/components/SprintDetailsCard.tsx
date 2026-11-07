@@ -1,4 +1,4 @@
-import { Sparkles, Calendar, CheckCircle2 } from "lucide-react";
+import { Sparkles, Calendar } from "lucide-react";
 import { Button } from "../../../components/ui/Button";
 import type { Sprint } from "../../../types/api";
 import { useAiUi } from "../../../store/useAiUi";
@@ -29,7 +29,6 @@ interface SprintDetailsCardProps {
 export function SprintDetailsCard({
   currentSprint,
   sCopy,
-  onOpenCompleteModal,
 }: SprintDetailsCardProps) {
   const openSummary = useAiUi((s) => s.openSummary);
 
@@ -90,19 +89,7 @@ export function SprintDetailsCard({
           </p>
         </div>
 
-        {/* زر إكمال السبرنت يظهر فقط إذا كان السبرنت نشطاً */}
-        <div className="flex items-center gap-2 shrink-0">
-          {currentSprint.status === "active" && (
-            <Button
-              size="sm"
-              onClick={onOpenCompleteModal}
-              leftIcon={<CheckCircle2 size={14} className="shrink-0" />}
-              className="text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer rounded-xl px-4"
-            >
-              {sCopy.completeSprint}
-            </Button>
-          )}
-        </div>
+     
       </div>
 
       {/* بطاقات الإحصائيات الأربعة */}

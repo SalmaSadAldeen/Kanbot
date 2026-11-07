@@ -333,10 +333,12 @@ export function BacklogPage() {
                       setSelectedTodo(todo);
                       setIsDetailsOpen(true);
                     }}
-                    sprintOptions={allSprints.map((sprint) => ({
-                      id: sprint.id,
-                      name: sprint.name,
-                    }))}
+                    sprintOptions={allSprints
+                      .filter((sprint) => sprint.status !== "completed") // <--- استبعاد السبرنتات المنتهية نهائياً من القائمة
+                      .map((sprint) => ({
+                        id: sprint.id,
+                        name: sprint.name,
+                      }))}
                   />
 
                   <QuickCreateBar
@@ -378,7 +380,7 @@ export function BacklogPage() {
           todo={selectedTodo}
           projectId={projectId}
           isOpen={isDetailsOpen}
-          sprints={allSprints}
+          sprints={allSprints.filter((s) => s.status !== "completed")}
           onClose={() => {
             setIsDetailsOpen(false);
             setSelectedTodo(null);

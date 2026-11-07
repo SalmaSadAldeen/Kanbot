@@ -36,7 +36,11 @@ const BoardPage = React.lazy(() =>
     default: mod.BoardPage,
   })),
 );
-
+const SprintAnalyticsPage = React.lazy(() =>
+  import("./features/analytics/SprintAnalytics").then((mod) => ({
+    default: mod.SprintAnalyticsPage,
+  })),
+);
 // استخدام الـ Spinner المخصص الخاص بكِ لضمان ثبات الشكل وعدم حدوث رجة
 function RouteFallback() {
   return (
@@ -126,7 +130,12 @@ export const router = createBrowserRouter([
             ),
           },
           {
-          
+            path: "/projects/:projectId/analytics",
+            element: (
+              <Suspense fallback={<RouteFallback />}>
+                <SprintAnalyticsPage />
+              </Suspense>
+            ),
           },
         ],
       },
