@@ -5,23 +5,23 @@ import { useForm } from "react-hook-form";
 import { ArrowRight, LockKeyhole, Mail } from "lucide-react";
 
 import { ApiError } from "../../../api/client";
-import { login as loginRequest } from "../../../api/api";
+import { login as loginRequest } from "../../../api/auth";
 import type { LoginRequest } from "../../../types/api";
 import { useAuth } from "../AuthProvider";
 import { loginSchema } from "../AuthSchemas";
 import type { LoginFormData } from "../AuthSchemas";
-import { ApiAlert } from "../components/ApiAlert"; // الاستيراد من مجلد المكونات الجديد
-import { AuthInput } from "../components/AuthInput"; // الاستيراد من مجلد المكونات الجديد
-import { AuthFrame } from "../components/AuthFrame"; // الاستيراد من مجلد المكونات الجديد
-
+import { ApiAlert } from "../components/ApiAlert";
+import { AuthInput } from "../components/AuthInput";
+import { AuthFrame } from "../components/AuthFrame";
+import { useTranslation } from "../../../store/useAppStore";
 export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
+  const { t, isRtl } = useTranslation(); // جلب الترجمة واتجاه اللغة
+
   const [apiMessage, setApiMessage] = useState(() =>
-    params.get("expired") === "1"
-      ? "Your session has expired. Please log in again."
-      : "",
+    params.get("expired") === "1" ? t.loginPage.sessionExpired : "",
   );
 
   const {
@@ -39,15 +39,24 @@ export function LoginPage() {
       const credentials: LoginRequest = data;
       const response = await loginRequest(credentials);
       login(response.token, response.user);
-      const redirect = params.get("redirect");
-      navigate(redirect?.startsWith("/") ? redirect : "/projects", {
-        replace: true,
-      });
+
+      const rawRedirect = params.get("redirect");
+      let safeRedirect = "/projects";
+      if (rawRedirect) {
+        const decoded = decodeURIComponent(rawRedirect);
+        if (
+          decoded.startsWith("/") &&
+          !decoded.startsWith("//") &&
+          !decoded.includes("\\")
+        ) {
+          safeRedirect = decoded;
+        }
+      }
+
+      navigate(safeRedirect, { replace: true });
     } catch (error) {
       setApiMessage(
-        error instanceof ApiError
-          ? error.message
-          : "Something went wrong. Please try again.",
+        error instanceof ApiError ? error.message : t.loginPage.genericError,
       );
     }
   };
@@ -58,19 +67,19 @@ export function LoginPage() {
       <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <AuthInput
           id="email"
-          label="Email address"
+          label={t.loginPage.emailLabel}
           type="email"
           icon={Mail}
-          autoComplete="off"
+          autoComplete="email"
           registration={register("email")}
           error={errors.email?.message}
         />
         <AuthInput
           id="password"
-          label="Password"
+          label={t.loginPage.passwordLabel}
           type="password"
           icon={LockKeyhole}
-          autoComplete="new-password"
+          autoComplete="current-password"
           registration={register("password")}
           error={errors.password?.message}
         />
@@ -85,17 +94,20 @@ export function LoginPage() {
               className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
             />
           )}
-          {isSubmitting ? "Signing in…" : "Sign in"}
-          {!isSubmitting && <ArrowRight size={17} />}
+          {isSubmitting ? t.loginPage.submittingBtn : t.loginPage.submitBtn}
+          {/* عكس اتجاه الأيقونة تلقائياً إذا كانت اللغة عربية RTL */}
+          {!isSubmitting && (
+            <ArrowRight size={17} className={isRtl ? "rotate-180" : ""} />
+          )}
         </button>
       </form>
       <p className="mt-7 text-center text-sm text-slate-500 dark:text-slate-400">
-        New to Kanbot?{" "}
+        {t.loginPage.noAccount}{" "}
         <Link
           to="/register"
           className="font-semibold text-indigo-600 hover:text-indigo-700 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
         >
-          Create an account
+          {t.loginPage.createAccount}
         </Link>
       </p>
     </AuthFrame>

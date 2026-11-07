@@ -1,7 +1,13 @@
-import React, { createContext, useCallback, useContext, useEffect } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { User } from "../../types/api.ts";
-import { getMe } from "../../api/api.ts";
+import { getMe } from "../../api/auth.ts";
 import { setUnauthorizedHandler } from "../../api/client";
 
 interface AuthContextType {
@@ -18,56 +24,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const queryClient = useQueryClient();
-  const token = localStorage.getItem("kanbot_token");
+  const [token, setToken] = useState<string | null>(() =>
+    localStorage.getItem("kanbot_token"),
+  );
 
-  const {
-    data: user = null,
-    isLoading,
-    isError,
-  } = useQuery({
+  const { data: user = null, isLoading } = useQuery({
     queryKey: ["auth-me"],
     queryFn: async () => {
       const response = await getMe();
       return response.user;
     },
     enabled: Boolean(token),
-    retry: false,
+    retry: 1,
     staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
 
   const logout = useCallback(() => {
     localStorage.removeItem("kanbot_token");
+    setToken(null);
     queryClient.clear();
     window.location.replace("/login");
   }, [queryClient]);
 
   const login = (newToken: string, newUser: User) => {
     localStorage.setItem("kanbot_token", newToken);
+    setToken(newToken);
     queryClient.setQueryData(["auth-me"], newUser);
   };
 
+  // معالجة انتهاء الجلسة وإبلاغ المستخدم بوضوح عبر expired=1
   useEffect(() => {
     setUnauthorizedHandler(() => {
       localStorage.removeItem("kanbot_token");
+      setToken(null);
       queryClient.clear();
-      const redirect = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-      window.location.replace(`/login?redirect=${encodeURIComponent(redirect)}&expired=1`);
+
+      const currentRedirect = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+
+      // إذا لم نكن أصلاً في صفحة اللوجن، نقوم بالتوجيه مع إعلامه بانتهاء الجلسة
+      if (!window.location.pathname.includes("/login")) {
+        window.location.replace(
+          `/login?redirect=${encodeURIComponent(currentRedirect)}&expired=1`,
+        );
+      }
     });
   }, [queryClient]);
 
-  useEffect(() => {
-    if (isError) {
-      logout();
-    }
-  }, [isError, logout]);
-
   if (token && isLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-zinc-950 text-zinc-100">
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="flex flex-col items-center gap-3">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
-          <span className="text-xs font-medium tracking-wider text-zinc-500 uppercase">
-            Initializing session...
+          <span className="text-xs font-medium tracking-widest uppercase text-slate-500 dark:text-slate-400">
+            Loading…
           </span>
         </div>
       </div>

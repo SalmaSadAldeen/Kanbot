@@ -15,6 +15,7 @@ export class ApiError extends Error {
 }
 
 let unauthorizedHandler: (() => void) | null = null;
+let handlingUnauthorized = false;
 
 export function setUnauthorizedHandler(handler: () => void) {
   unauthorizedHandler = handler;
@@ -53,8 +54,13 @@ export async function request<T>(
   }
 
   if (response.status === 401 && !path.includes("/auth/login")) {
-    if (unauthorizedHandler) {
-      unauthorizedHandler();
+    if (unauthorizedHandler && !handlingUnauthorized) {
+      handlingUnauthorized = true;
+      try {
+        unauthorizedHandler();
+      } finally {
+        handlingUnauthorized = false;
+      }
     }
   }
 

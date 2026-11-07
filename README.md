@@ -6,18 +6,18 @@
 
 A **1-week frontend project**. The backend is done. You build the React app.
 
-| Folder | Status | What it is |
-|---|---|---|
+| Folder               | Status      | What it is                                                                                                 |
+| -------------------- | ----------- | ---------------------------------------------------------------------------------------------------------- |
 | [`server/`](server/) | ✅ Complete | Express 5 + TypeScript API: auth (JWT), projects, backlog, sprints, board, AI assistant (mock or real LLM) |
-| `client/` | 🛠 To build | React + TypeScript + Vite. **UI and design are your choice** |
-| [`docs/`](docs/) | 📄 | Requirements and implementation plan, in English and Arabic |
-| [`design/`](design/) | 🎨 | Low-fidelity wireframes (no visual design) + logo |
+| `client/`            | 🛠 To build | React + TypeScript + Vite. **UI and design are your choice**                                               |
+| [`docs/`](docs/)     | 📄          | Requirements and implementation plan, in English and Arabic                                                |
+| [`design/`](design/) | 🎨          | Low-fidelity wireframes (no visual design) + logo                                                          |
 
 ## Documents
 
-| | English | العربية |
-|---|---|---|
-| Requirements | [REQUIREMENTS.en.md](docs/REQUIREMENTS.en.md) | [REQUIREMENTS.ar.md](docs/REQUIREMENTS.ar.md) |
+|                                  | English                                                     | العربية                                                     |
+| -------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------- |
+| Requirements                     | [REQUIREMENTS.en.md](docs/REQUIREMENTS.en.md)               | [REQUIREMENTS.ar.md](docs/REQUIREMENTS.ar.md)               |
 | Implementation plan + API design | [IMPLEMENTATION-PLAN.en.md](docs/IMPLEMENTATION-PLAN.en.md) | [IMPLEMENTATION-PLAN.ar.md](docs/IMPLEMENTATION-PLAN.ar.md) |
 
 API contract (all request and response types): [`server/src/types/api.ts`](server/src/types/api.ts)
@@ -39,3 +39,9 @@ Then follow the [implementation plan](docs/IMPLEMENTATION-PLAN.en.md#5-day-by-da
 - `design/wireframes/*.png`: 12 greyscale wireframes (flow + 11 screens). They show **content and layout only**. Colours, typography and components are up to you.
 - `design/logo/`: icon and logo (SVG + PNG, light and dark). Use them, recolour them, or make your own.
 - `design/kanbot.figcraft` (source) and `design/kanbot.fig` (experimental Figma export).
+
+# Kanbot Frontend (Client)
+
+Kanbot is a personal Agile project management application (Kanban + Bot) designed for a single user, featuring sprint planning, a task backlog, an active sprint board, and a smart AI assistant.
+
+---

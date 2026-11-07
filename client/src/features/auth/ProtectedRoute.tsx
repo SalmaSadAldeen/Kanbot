@@ -9,7 +9,14 @@ export const ProtectedRoute: React.FC = () => {
   if (isLoading) return null;
 
   if (!token) {
-    return <Navigate to={`/login?redirect=${encodeURIComponent(`${location.pathname}${location.search}${location.hash}`)}`} replace />;
+    // دمج المسار الحالي مع البارامترات والهاش لتخزينه كاملاً
+    const fullRedirectPath = `${location.pathname}${location.search}${location.hash}`;
+    return (
+      <Navigate
+        to={`/login?redirect=${encodeURIComponent(fullRedirectPath)}`}
+        replace
+      />
+    );
   }
 
   return <Outlet />;

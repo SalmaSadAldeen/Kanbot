@@ -6,19 +6,21 @@ import type { FieldPath } from "react-hook-form";
 import { ArrowRight, LockKeyhole, Mail, UserRound } from "lucide-react";
 
 import { ApiError } from "../../../api/client";
-import { register as registerRequest } from "../../../api/api";
+import { register as registerRequest } from "../../../api/auth";
 import type { RegisterRequest } from "../../../types/api";
 import { useAuth } from "../AuthProvider";
 import { registerSchema } from "../AuthSchemas";
 import type { RegisterFormData } from "../AuthSchemas";
-import { ApiAlert } from "../components/ApiAlert"; // الاستيراد من مجلد المكونات الجديد
-import { AuthInput } from "../components/AuthInput"; // الاستيراد من مجلد المكونات الجديد
-import { AuthFrame } from "../components/AuthFrame"; // الاستيراد من مجلد المكونات الجديد
+import { ApiAlert } from "../components/ApiAlert";
+import { AuthInput } from "../components/AuthInput";
+import { AuthFrame } from "../components/AuthFrame";
+import { useTranslation } from "../../../store/useAppStore"; // استيراد الترجمة
 
 export function RegisterPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [apiMessage, setApiMessage] = useState("");
+  const { t, isRtl } = useTranslation();
 
   const {
     register,
@@ -43,13 +45,20 @@ export function RegisterPage() {
       navigate("/projects", { replace: true });
     } catch (error) {
       if (error instanceof ApiError) {
+        if (error.status === 409) {
+          setError("email", {
+            type: "server",
+            message: t.registerPage.emailExists,
+          });
+        }
         for (const detail of error.details ?? []) {
           const path = detail.path as FieldPath<RegisterFormData>;
-          setError(path, { type: "server", message: detail.message });
+          if (path in data)
+            setError(path, { type: "server", message: detail.message });
         }
         setApiMessage(error.message);
       } else {
-        setApiMessage("Something went wrong. Please try again.");
+        setApiMessage(t.registerPage.genericError);
       }
     }
   };
@@ -60,7 +69,7 @@ export function RegisterPage() {
       <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <AuthInput
           id="name"
-          label="Full name"
+          label={t.registerPage.fullNameLabel}
           icon={UserRound}
           autoComplete="name"
           registration={register("name")}
@@ -68,16 +77,16 @@ export function RegisterPage() {
         />
         <AuthInput
           id="email"
-          label="Email address"
+          label={t.registerPage.emailLabel}
           type="email"
           icon={Mail}
-          autoComplete="off"
+          autoComplete="email"
           registration={register("email")}
           error={errors.email?.message}
         />
         <AuthInput
           id="password"
-          label="Password"
+          label={t.registerPage.passwordLabel}
           type="password"
           icon={LockKeyhole}
           autoComplete="new-password"
@@ -86,7 +95,7 @@ export function RegisterPage() {
         />
         <AuthInput
           id="confirmPassword"
-          label="Confirm password"
+          label={t.registerPage.confirmPasswordLabel}
           type="password"
           icon={LockKeyhole}
           autoComplete="new-password"
@@ -104,21 +113,25 @@ export function RegisterPage() {
               className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
             />
           )}
-          {isSubmitting ? "Creating account…" : "Create account"}
-          {!isSubmitting && <ArrowRight size={17} />}
+          {isSubmitting
+            ? t.registerPage.submittingBtn
+            : t.registerPage.submitBtn}
+          {!isSubmitting && (
+            <ArrowRight size={17} className={isRtl ? "rotate-180" : ""} />
+          )}
         </button>
       </form>
       <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
-        Already have an account?{" "}
+        {t.registerPage.alreadyHaveAccount}{" "}
         <Link
           to="/login"
-          className="font-semibold text-indigo-600 hover:text-indigo-700 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          className="font-semibold text-indigo-600 hover:text-indigo-700 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
         >
-          Sign in
+          {t.registerPage.signInLink}
         </Link>
       </p>
-      <p className="mt-4 text-center text-xs text-slate-400">
-        By creating an account, you agree to use Kanbot responsibly.
+      <p className="mt-4 text-center text-xs text-slate-400 dark:text-slate-500">
+        {t.registerPage.termsNote}
       </p>
     </AuthFrame>
   );
