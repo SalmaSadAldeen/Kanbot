@@ -10,7 +10,7 @@ import { register as registerRequest } from "../../../api/auth";
 import type { RegisterRequest } from "../../../types/api";
 import { useAuth } from "../AuthProvider";
 import { registerSchema } from "../AuthSchemas";
-import type { RegisterFormData } from "../AuthSchemas";
+import type { RegisterFormData } from "../AuthSchemas.ts";
 import { ApiAlert } from "../components/ApiAlert";
 import { AuthInput } from "../components/AuthInput";
 import { AuthFrame } from "../components/AuthFrame";

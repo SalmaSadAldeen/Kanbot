@@ -8,7 +8,7 @@ import { ApiError } from "../../../api/client";
 import { login as loginRequest } from "../../../api/auth";
 import type { LoginRequest } from "../../../types/api";
 import { useAuth } from "../AuthProvider";
-import { loginSchema } from "../AuthSchemas";
+import { loginSchema } from "../AuthSchemas.ts";
 import type { LoginFormData } from "../AuthSchemas";
 import { ApiAlert } from "../components/ApiAlert";
 import { AuthInput } from "../components/AuthInput";
