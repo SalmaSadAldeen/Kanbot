@@ -3,11 +3,13 @@ import { useSprints } from "../../hooks/useSprints.ts";
 import { BurndownChart } from "./components/BurndownChart";
 import { VelocityChart } from "./components/VelocityChart";
 import { Spinner } from "../../components/ui/Spinner";
+import { useTranslation } from "../../store/useAppStore";
 
 export function SprintAnalyticsPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const { allSprints, isLoading } = useSprints(projectId);
-
+  const { t } = useTranslation();
+  const sa = t.projectsPage?.sprintAnalytics;
   const activeSprint = allSprints.find((s) => s.status === "active") || null;
 
   if (isLoading) {
@@ -22,11 +24,10 @@ export function SprintAnalyticsPage() {
     <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fadeIn">
       <div className="flex flex-col gap-1">
         <h1 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50 sm:text-2xl">
-          إحصائيات وتحليلات المشروع
+          {sa.pageTitle}
         </h1>
         <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-          متابعة تقدم إنجاز السبرنت النشط ومخطط سرعة الإنجاز عبر السبرنتات
-          المكتملة
+          {sa?.pageSubtitle}
         </p>
       </div>
 
