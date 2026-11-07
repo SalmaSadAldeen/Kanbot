@@ -36,32 +36,64 @@ export function TodoActionsMenu({
   moreLabel,
 }: TodoActionsMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [openUpward, setOpenUpward] = useState(false);
+  const [menuStyle, setMenuStyle] = useState<{
+    top?: number;
+    bottom?: number;
+    right?: number;
+    left?: number;
+  }>({});
   const menuRef = useRef<HTMLDivElement>(null);
-  const { t } = useTranslation();
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const { t, isRtl } = useTranslation();
   const dict = t.projectsPage.backlogPage.todoActions;
 
+  // إغلاق القائمة فوراً عند النقر خارجها أو عند عمل Scroll بالصفحة
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
+
+    const handleScroll = () => {
+      if (isOpen) setIsOpen(false);
+    };
+
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
+      window.addEventListener("scroll", handleScroll, true);
     }
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleScroll, true);
     };
   }, [isOpen]);
 
   const handleToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isOpen && menuRef.current) {
-      const rect = menuRef.current.getBoundingClientRect();
+    if (!isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
-      // إذا كانت المساحة بالأسفل أقل من 280 بكسل، افتح القائمة للأعلى تلقائياً لتظهر كاملة
-      setOpenUpward(spaceBelow < 280);
+      const menuHeight = 280; // الطول التقريبي للقائمة
+
+      // إذا ما في مساحة كفية تحت الزر، افتحها للأعلى
+      const openUpward = spaceBelow < menuHeight && rect.top > menuHeight;
+
+      if (openUpward) {
+        setMenuStyle({
+          bottom: window.innerHeight - rect.top + 4,
+          [isRtl ? "left" : "right"]: isRtl
+            ? rect.left
+            : window.innerWidth - rect.right,
+        });
+      } else {
+        setMenuStyle({
+          top: rect.bottom + 4,
+          [isRtl ? "left" : "right"]: isRtl
+            ? rect.left
+            : window.innerWidth - rect.right,
+        });
+      }
     }
     setIsOpen(!isOpen);
   };
@@ -75,6 +107,7 @@ export function TodoActionsMenu({
   return (
     <div className="relative inline-block text-left" ref={menuRef}>
       <button
+        ref={buttonRef}
         type="button"
         aria-label={moreLabel}
         title={moreLabel}
@@ -86,9 +119,11 @@ export function TodoActionsMenu({
 
       {isOpen && (
         <div
-          className={`absolute end-0 z-50 w-52 origin-top-end rounded-xl bg-white p-1.5 shadow-2xl ring-1 ring-black/5 dark:bg-slate-900 dark:ring-white/10 dark:border dark:border-slate-800 animate-in fade-in zoom-in-95 duration-100 ${
-            openUpward ? "bottom-full mb-2" : "top-full mt-1"
-          }`}
+          style={{
+            position: "fixed",
+            ...menuStyle,
+          }}
+          className="z-[99999] w-52 rounded-xl bg-white p-1.5 shadow-2xl ring-1 ring-black/5 dark:bg-slate-900 dark:ring-white/10 dark:border dark:border-slate-800 animate-in fade-in zoom-in-95 duration-100"
         >
           <button
             type="button"

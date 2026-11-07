@@ -117,9 +117,11 @@ export function useTodos(projectId: string | undefined, sprintId?: string) {
     },
   });
 
+  // تعديل الـ deleteMutation ليقبل معامل silent اختياري
   const deleteMutation = useMutation({
-    mutationFn: (todoId: string) => deleteTodo(todoId),
-    onMutate: async (todoId) => {
+    mutationFn: ({ todoId }: { todoId: string; silent?: boolean }) =>
+      deleteTodo(todoId),
+    onMutate: async ({ todoId }) => {
       await queryClient.cancelQueries({ queryKey });
       const previous = queryClient.getQueryData<Todo[]>(queryKey);
       const target = (previous ?? []).find((t) => t.id === todoId);
@@ -130,14 +132,17 @@ export function useTodos(projectId: string | undefined, sprintId?: string) {
 
       return { previous, sprintId: target?.sprintId };
     },
-    onSuccess: async (_data, _todoId, context) => {
-      toast.success("Todo deleted successfully");
+    onSuccess: async (_data, variables, context) => {
+      // إظهار التوست فقط إذا لم يتم تفعيل وضع الـ silent
+      if (!variables.silent) {
+        toast.success("Todo deleted successfully");
+      }
       await buildInvalidations(queryClient, projectId, [
         context?.sprintId,
         sprintId,
       ]);
     },
-    onError: (error: Error, _todoId, context) => {
+    onError: (error: Error, _variables, context) => {
       if (context?.previous) {
         queryClient.setQueryData(queryKey, context.previous);
       }
@@ -194,7 +199,9 @@ export function useTodos(projectId: string | undefined, sprintId?: string) {
     updateTodo: updateMutation.mutateAsync,
     isUpdating: updateMutation.isPending,
 
-    deleteTodo: deleteMutation.mutateAsync,
+    // تحديث دالة الحذف لتستقبل المعامل الاختياري (ويمكن استدعاؤها هكذا: deleteTodo({ todoId, silent: true }))
+    deleteTodo: (todoId: string, silent?: boolean) =>
+      deleteMutation.mutateAsync({ todoId, silent }),
     isDeleting: deleteMutation.isPending,
 
     moveTodo: moveMutation.mutateAsync,

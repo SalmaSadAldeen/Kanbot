@@ -17,6 +17,9 @@ interface BacklogSectionListProps {
   sprintOptions?: { id: string; name: string }[];
   sprintId?: string | null;
   containerId?: string;
+  isSelectMode?: boolean;
+  selectedTodoIds?: string[];
+  onToggleSelectTodo?: (id: string) => void;
 }
 
 export function BacklogSectionList({
@@ -29,6 +32,9 @@ export function BacklogSectionList({
   onEditTodo,
   sprintOptions = [],
   containerId = "backlog-container",
+  isSelectMode = false,
+  selectedTodoIds = [],
+  onToggleSelectTodo,
 }: BacklogSectionListProps) {
   const { setNodeRef } = useDroppable({
     id: containerId,
@@ -41,15 +47,15 @@ export function BacklogSectionList({
           items={todos.map((t: Todo) => t.id)}
           strategy={verticalListSortingStrategy}
         >
-          <div className="flex flex-col bg-white dark:bg-slate-900">
+          <div className="flex flex-col bg-white dark:bg-slate-900 overflow-visible">
             {todos.map((todo: Todo, index: number) => (
               <div
                 key={todo.id}
-                className={
+                className={`${
                   index > 0
                     ? "border-t border-slate-100 dark:border-slate-800/40"
                     : ""
-                }
+                } overflow-visible`} // تأكيد عدم وجود قص للعناصر
               >
                 <TodoRow
                   todo={todo}
@@ -57,6 +63,9 @@ export function BacklogSectionList({
                   onSelect={() => onSelectTodo(todo)}
                   onEdit={() => onEditTodo(todo)}
                   sprintOptions={sprintOptions}
+                  isSelectMode={isSelectMode}
+                  isSelected={selectedTodoIds.includes(todo.id)}
+                  onToggleSelect={onToggleSelectTodo}
                 />
               </div>
             ))}

@@ -20,6 +20,9 @@ interface TodoRowProps {
   onSelect: () => void;
   onEdit: () => void;
   sprintOptions?: { id: string; name: string }[];
+  isSelectMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string) => void;
 }
 
 export function TodoRow({
@@ -29,6 +32,9 @@ export function TodoRow({
   onSelect,
   onEdit,
   sprintOptions = [],
+  isSelectMode = false,
+  isSelected = false,
+  onToggleSelect,
 }: TodoRowProps) {
   const { projectId } = useParams<{ projectId: string }>();
   const { t, isRtl } = useTranslation();
@@ -129,7 +135,7 @@ export function TodoRow({
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [],);
+  }, []);
 
   return (
     <>
@@ -137,12 +143,33 @@ export function TodoRow({
         ref={setNodeRef}
         style={style}
         onClick={onSelect}
-        className={`grid grid-cols-[1.25rem_auto_minmax(0,1fr)_auto] items-center gap-2 px-3 py-3 transition-colors duration-200 cursor-pointer outline-none focus:outline-none ring-0 focus:ring-0 sm:grid-cols-[1.25rem_auto_minmax(12rem,1fr)_auto_auto_auto_auto] sm:gap-4 sm:px-4 ${className} ${
+        className={`grid items-center gap-2 px-3 py-3 transition-colors duration-200 cursor-pointer outline-none focus:outline-none ring-0 focus:ring-0 ${
+          isSelectMode
+            ? "grid-cols-[1.25rem_1.25rem_auto_minmax(0,1fr)_auto] sm:grid-cols-[1.25rem_1.25rem_auto_minmax(12rem,1fr)_auto_auto_auto_auto]"
+            : "grid-cols-[1.25rem_auto_minmax(0,1fr)_auto] sm:grid-cols-[1.25rem_auto_minmax(12rem,1fr)_auto_auto_auto_auto]"
+        } sm:gap-4 sm:px-4 ${className} ${
           isPendingDelete
             ? "border border-amber-300 bg-amber-50/60 dark:border-amber-900/60 dark:bg-amber-950/20 rounded-xl"
-            : "hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
+            : isSelected
+              ? "bg-indigo-50/40 dark:bg-indigo-950/20"
+              : "hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
         }`}
       >
+        {/* Checkbox يظهر فقط عند تفعيل وضع التحديد */}
+        {isSelectMode && (
+          <div
+            className="flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => onToggleSelect?.(todo.id)}
+              className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 cursor-pointer"
+            />
+          </div>
+        )}
+
         <span
           {...attributes}
           {...listeners}
